@@ -1,0 +1,12 @@
+logs/
+target/
+
+# VisualVM profiler files and folders
+config/
+lock
+var/
+
+# Editor config and temp files
+.idea/
+.vscode/
+*.iml
