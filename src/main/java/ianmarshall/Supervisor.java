@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ianmarshall.WorkerResult.ResultData;
+
 public class Supervisor
 {
 	public enum ExecutionCommand
@@ -165,8 +167,8 @@ public class Supervisor
 						else if (ecKey == CONTINUE)
 						{
 							int nRun = wrWorkerResult.getRun();
-							MetricAndDerivatives madG = wrWorkerResult.getMetricAndDerivatives();
-							worker = new Worker(m_spStartParameters, nRun, madG);
+							ResultData rdResultData = wrWorkerResult.getResultData();
+							worker = new Worker(m_spStartParameters, nRun, rdResultData);
 							thread = new Thread(worker);
 							thread.setUncaughtExceptionHandler(worker.getWorkerUncaughtExceptionHandler());
 							thread.start();

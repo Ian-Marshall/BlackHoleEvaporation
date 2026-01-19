@@ -8,61 +8,34 @@ import org.slf4j.LoggerFactory;
 public class StartParameters
 {
 	private static final Logger logger = LoggerFactory.getLogger(StartParameters.class);
-	private static int N_NUMBER_OF_ARGS = 5;
+	private static int N_NUMBER_OF_ARGS = 2;
 
 
 	// The parameters' argument names and data types
 
-	public static final String S_ARG_NAME_NUMBER_OF_RUNS = "numberOfRuns";
-	private static final String S_ARG_DATA_TYPE_NUMBER_OF_RUNS = "whole number";
+	public  static final String      S_ARG_NAME_START_RADIUS_RATIO = "startRadiusRatio";
+	private static final String S_ARG_DATA_TYPE_START_RADIUS_RATIO = "decimal number";
 
-	public static final String S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR = "neighbourPeakScalingFactor";
-	private static final String S_ARG_DATA_TYPE_NEIGHBOUR_PEAK_SCALING_FACTOR = "decimal number";
-
-	public static final String S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR = "acceptanceProbabilityScalingFactor";
-	private static final String S_ARG_DATA_TYPE_ACCEPTANCE_PROBILITY_SCALING_FACTOR = "decimal number";
-
-	public static final String S_ARG_NAME_TEMPERATURE_SCALING_FACTOR = "temperatureScalingFactor";
-	private static final String S_ARG_DATA_TYPE_TEMPERATURE_SCALING_FACTOR = "decimal number";
-
-	public static final String S_ARG_NAME_TEMPERATURE_DIVISOR = "temperatureDivisor";
-	private static final String S_ARG_DATA_TYPE_TEMPERATURE_DIVISOR = "decimal number";
+	public  static final String      S_ARG_NAME_TIME_INCREMENT_SECONDS = "timeIncrementSeconds";
+	private static final String S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS = "integer";
 
 
 	// The parameters' fields
-	private int m_nRuns = 0;
-	private double m_dblNeighbourPeakScalingFactor = 0.0;
-	private double m_dblAcceptanceProbabilityScalingFactor = 0.0;
-	private double m_dblTemperatureScalingFactor = 0.0;
-	private double m_dblTemperatureDivisor = 0.0;
+	private double m_dblStartRadiusRatio = 1.0;
+	private long m_loTimeIncrementSeconds = 1L;
 
 	public StartParameters()
 	{
 	}
 
-	public int getNumberOfRuns()
+	public double getStartRadiusRatio()
 	{
-		return m_nRuns;
+		return m_dblStartRadiusRatio;
 	}
 
-	public double getNeighbourPeakScalingFactor()
+	public long getTimeIncrementSeconds()
 	{
-		return m_dblNeighbourPeakScalingFactor;
-	}
-
-	public double getAcceptanceProbabilityScalingFactor()
-	{
-		return m_dblAcceptanceProbabilityScalingFactor;
-	}
-
-	public double getTemperatureScalingFactor()
-	{
-		return m_dblTemperatureScalingFactor;
-	}
-
-	public double getTemperatureDivisor()
-	{
-		return m_dblTemperatureDivisor;
+		return m_loTimeIncrementSeconds;
 	}
 
 	public void showUsage()
@@ -70,24 +43,15 @@ public class StartParameters
 		String sMsg = String.format(
 		   "%nUsage"
 		 + "%n-----"
-		 + "%n  %s %s [%s] %s [%s] %s [%s] %s [%s] %s [%s]%n"
-		 + "%n[%2$s] is the number of runs to be executed by the worker (calculation processor)."
-		 + " This must be greater than zero."
-		 + "%n[%4$s] is the scaling factor to be applied to changes of neighbouring values in a iteration."
-		 + " This must be greater than zero."
-		 + "%n[%6$s] is the scaling factor to be used when calculating the probability of accepting a neighbouring state."
-		 + " This must be greater than zero."
-		 + "%n[%8$s] is the scaling factor to be used when calculating the annealing temperature."
-		 + " This must be greater than zero."
-		 + "%n[%10$s] is the divisor to be used when calculating the annealing temperature."
+		 + "%n  %s %s [%s] %s [%s]%n"
+		 + "%n[%2$s] is the initial ratio of the distance of the observer from the centre of black hole to its Schwarzschild radius."
+		 + " This must be greater than one."
+		 + "%n[%4$s] is the increase in the elapsed time as experienced by the observer, in seconds, for each iteration."
 		 + " This must be greater than zero."
 		 + "%n",
 		 BlackHoleEvaporation.class.getSimpleName(),
-		 S_ARG_NAME_NUMBER_OF_RUNS,                      S_ARG_DATA_TYPE_NUMBER_OF_RUNS,
-		 S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR,       S_ARG_DATA_TYPE_NEIGHBOUR_PEAK_SCALING_FACTOR,
-		 S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR, S_ARG_DATA_TYPE_ACCEPTANCE_PROBILITY_SCALING_FACTOR,
-		 S_ARG_NAME_TEMPERATURE_SCALING_FACTOR,          S_ARG_DATA_TYPE_TEMPERATURE_SCALING_FACTOR,
-		 S_ARG_NAME_TEMPERATURE_DIVISOR,                 S_ARG_DATA_TYPE_TEMPERATURE_DIVISOR);
+		 S_ARG_NAME_START_RADIUS_RATIO,     S_ARG_DATA_TYPE_START_RADIUS_RATIO,
+		 S_ARG_NAME_TIME_INCREMENT_SECONDS, S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS);
 
 		logger.info(sMsg);
 	}
@@ -99,93 +63,47 @@ public class StartParameters
 
 		if (asArgs.length == 2 * N_NUMBER_OF_ARGS)
 		{
-			int nIndexArgNumberOfRuns = -1;
-			int nIndexArgNeighbourPeakScalingFactor = -1;
-			int nIndexArgAcceptanceProbabilityScalingFactor = -1;
-			int nIndexArgTemperatureScalingFactor = -1;
-			int nIndexArgTemperatureDivisor = -1;
+			int nIndexArgStartRadiusRatio = -1;
+			int nIndexArgTimeIncrementSeconds = -1;
 
 			for (int i = 0; i < N_NUMBER_OF_ARGS; i++)
 			{
 				int nIndexArgName = 2 * i;
 
-				if (S_ARG_NAME_NUMBER_OF_RUNS.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgNumberOfRuns = nIndexArgName + 1;
-				else if (S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgNeighbourPeakScalingFactor = nIndexArgName + 1;
-				else if (S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgAcceptanceProbabilityScalingFactor = nIndexArgName + 1;
-				else if (S_ARG_NAME_TEMPERATURE_SCALING_FACTOR.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgTemperatureScalingFactor = nIndexArgName + 1;
-				else if (S_ARG_NAME_TEMPERATURE_DIVISOR.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgTemperatureDivisor = nIndexArgName + 1;
+				if (S_ARG_NAME_START_RADIUS_RATIO.equalsIgnoreCase(asArgs[nIndexArgName]))
+					nIndexArgStartRadiusRatio = nIndexArgName + 1;
+				else if (S_ARG_NAME_TIME_INCREMENT_SECONDS.equalsIgnoreCase(asArgs[nIndexArgName]))
+					nIndexArgTimeIncrementSeconds = nIndexArgName + 1;
+
 			}
 
-			if ((nIndexArgNumberOfRuns > -1) && (nIndexArgNeighbourPeakScalingFactor > -1)
-			 && (nIndexArgAcceptanceProbabilityScalingFactor > -1) && (nIndexArgTemperatureScalingFactor > -1)
-			 && (nIndexArgTemperatureDivisor > -1))
-			{
+			if ((nIndexArgStartRadiusRatio > -1) && (nIndexArgTimeIncrementSeconds > -1))
 				try
 				{
-					m_nRuns = Integer.parseInt(asArgs[nIndexArgNumberOfRuns]);
-					m_dblNeighbourPeakScalingFactor = Double.parseDouble(asArgs[nIndexArgNeighbourPeakScalingFactor]);
-					m_dblAcceptanceProbabilityScalingFactor =
-					 Double.parseDouble(asArgs[nIndexArgAcceptanceProbabilityScalingFactor]);
-					m_dblTemperatureScalingFactor = Double.parseDouble(asArgs[nIndexArgTemperatureScalingFactor]);
-					m_dblTemperatureDivisor = Double.parseDouble(asArgs[nIndexArgTemperatureDivisor]);
+					m_dblStartRadiusRatio = Double.parseDouble(asArgs[nIndexArgStartRadiusRatio]);
+					m_loTimeIncrementSeconds = Long.parseLong(asArgs[nIndexArgTimeIncrementSeconds]);
 
-					if (m_nRuns <= 0)
+					if (m_dblStartRadiusRatio <= 1.0)
+						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 1.0.",
+						 S_ARG_NAME_START_RADIUS_RATIO, m_dblStartRadiusRatio));
+
+					if (m_loTimeIncrementSeconds <= 0)
+					{
+						if (sbError.length() > 0)
+							sbError.append(" ");
+
 						sbError.append(String.format("The parameter \"%s\" of value %d must be greater than 0.",
-						 S_ARG_NAME_NUMBER_OF_RUNS, m_nRuns));
-
-					if (m_dblNeighbourPeakScalingFactor <= 0.0)
-					{
-						if (sbError.length() > 0)
-							sbError.append(" ");
-
-						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 0.0 .",
-						 S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR, m_dblNeighbourPeakScalingFactor));
-					}
-
-					if (m_dblAcceptanceProbabilityScalingFactor <= 0.0)
-					{
-						if (sbError.length() > 0)
-							sbError.append(" ");
-
-						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 0.0 .",
-						 S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR, m_dblAcceptanceProbabilityScalingFactor));
-					}
-
-					if (m_dblTemperatureScalingFactor <= 0.0)
-					{
-						if (sbError.length() > 0)
-							sbError.append(" ");
-
-						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 0.0 .",
-						 S_ARG_NAME_TEMPERATURE_SCALING_FACTOR, m_dblTemperatureScalingFactor));
-					}
-
-
-					if (m_dblTemperatureDivisor <= 0.0)
-					{
-						if (sbError.length() > 0)
-							sbError.append(" ");
-
-						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 0.0 .",
-						 S_ARG_NAME_TEMPERATURE_DIVISOR, m_dblTemperatureDivisor));
+						 S_ARG_NAME_TIME_INCREMENT_SECONDS, m_loTimeIncrementSeconds));
 					}
 				}
 				catch (NumberFormatException e)
 				{
 					sbError.append("At least one of the parameters has an incorrect data type.");
 				}
-			}
 			else
 				sbError.append(String.format(
-				 "At least one of the parameters \"%s\", \"%s\", \"%s\", \"%s\" and \"%s\" is missing.",
-				 S_ARG_NAME_NUMBER_OF_RUNS, S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR,
-				 S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR, S_ARG_NAME_TEMPERATURE_SCALING_FACTOR,
-				 S_ARG_NAME_TEMPERATURE_DIVISOR));
+				 "At least one of the parameters \"%s\" and \"%s\" is missing.",
+				 S_ARG_NAME_START_RADIUS_RATIO, S_ARG_NAME_TIME_INCREMENT_SECONDS));
 		}
 		else
 			sbError.append(String.format("Please specify exactly %d parameters, each with one value.", N_NUMBER_OF_ARGS));

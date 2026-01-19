@@ -13,6 +13,7 @@ public class BlackHoleEvaporation
 {
 	private static final Logger logger = LoggerFactory.getLogger(BlackHoleEvaporation.class);
 	private static final DecimalFormat m_dfInteger;
+	private static final DecimalFormat m_dfLong;
 	private static final DecimalFormat m_dfFloat;
 
 	static
@@ -21,6 +22,7 @@ public class BlackHoleEvaporation
 		dfSymbols.setDecimalSeparator('.');
 		dfSymbols.setGroupingSeparator(' ');
 		m_dfInteger = new DecimalFormat("###,###",     dfSymbols);
+		m_dfLong    = new DecimalFormat("###,###",     dfSymbols);
 		m_dfFloat   = new DecimalFormat("###,###.###", dfSymbols);
 		m_dfFloat.setMinimumFractionDigits(1);
 	}
@@ -43,36 +45,22 @@ public class BlackHoleEvaporation
 		String sError = spStartParams.parseArguments(asArgs);
 		if (sError.isEmpty())
 		{
-			int    nRuns                                 = spStartParams.getNumberOfRuns();
-			double dblNeighbourPeakScalingFactor         = spStartParams.getNeighbourPeakScalingFactor();
-			double dblAcceptanceProbabilityScalingFactor = spStartParams.getAcceptanceProbabilityScalingFactor();
-			double dblTemperatureScalingFactor           = spStartParams.getTemperatureScalingFactor();
-			double dblTemperatureDivisor                 = spStartParams.getTemperatureDivisor();
+			double dblStartRadiusRatio = spStartParams.getStartRadiusRatio();
+			long loTimeIncrementSeconds = spStartParams.getTimeIncrementSeconds();
 
 			int nMaxWidthParams = Collections.max(Arrays.asList(
-			 StartParameters.S_ARG_NAME_NUMBER_OF_RUNS.length(),
-			 StartParameters.S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR.length(),
-			 StartParameters.S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR.length(),
-			 StartParameters.S_ARG_NAME_TEMPERATURE_SCALING_FACTOR.length(),
-			 StartParameters.S_ARG_NAME_TEMPERATURE_DIVISOR.length()));
+			 StartParameters.S_ARG_NAME_START_RADIUS_RATIO.length(),
+			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS.length()));
 
-			String sRuns                               = formatInteger(nRuns) + "  ";
-			String sNeighbourPeakScalingFactor         = formatDouble(dblNeighbourPeakScalingFactor);
-			String sAcceptanceProbabilityScalingFactor = formatDouble(dblAcceptanceProbabilityScalingFactor);
-			String sTemperatureScalingFactor           = formatDouble(dblTemperatureScalingFactor);
-			String sTemperatureDivisor                 = formatDouble(dblTemperatureDivisor);
+	 // String sRuns                 = formatInteger(nRuns) + "  ";
+			String sStartRadiusRatio     = formatDouble(dblStartRadiusRatio);
+			String sTimeIncrementSeconds = formatLong(loTimeIncrementSeconds);
 
 			int nMaxWidthValues = Collections.max(Arrays.asList(
-			 sRuns.length(),
-			 sNeighbourPeakScalingFactor.length(),
-			 sAcceptanceProbabilityScalingFactor.length(),
-			 sTemperatureScalingFactor.length(),
-			 sTemperatureDivisor.length()));
+			 sStartRadiusRatio.length(),
+			 sTimeIncrementSeconds.length()));
 
 			String sFormat = String.format("Parameter values:"
-			 + "%%n  %%%1$ss = %%%2$ss,"
-			 + "%%n  %%%1$ss = %%%2$ss,"
-			 + "%%n  %%%1$ss = %%%2$ss,"
 			 + "%%n  %%%1$ss = %%%2$ss,"
 			 + "%%n  %%%1$ss = %%%2$ss."
 			 + "%%n%%nTo pause execution enter \"P\"."
@@ -80,11 +68,8 @@ public class BlackHoleEvaporation
 			 nMaxWidthParams, nMaxWidthValues);
 
 			logger.info(String.format(sFormat,
-			 StartParameters.S_ARG_NAME_NUMBER_OF_RUNS,                      sRuns,
-			 StartParameters.S_ARG_NAME_NEIGHBOUR_PEAK_SCALING_FACTOR,       sNeighbourPeakScalingFactor,
-			 StartParameters.S_ARG_NAME_ACCEPTANCE_PROBILITY_SCALING_FACTOR, sAcceptanceProbabilityScalingFactor,
-			 StartParameters.S_ARG_NAME_TEMPERATURE_SCALING_FACTOR,          sTemperatureScalingFactor,
-			 StartParameters.S_ARG_NAME_TEMPERATURE_DIVISOR,                 sTemperatureDivisor));
+			 StartParameters.S_ARG_NAME_START_RADIUS_RATIO,     sStartRadiusRatio,
+			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS, sTimeIncrementSeconds));
 
 			final int N_DELAY_BEFORE_START_S = 30;
 			logger.info(String.format("Waiting %ds before starting processing...", N_DELAY_BEFORE_START_S));
@@ -143,6 +128,11 @@ public class BlackHoleEvaporation
 	public static String formatInteger(int n)
 	{
 		return m_dfInteger.format(n);
+	}
+
+	public static String formatLong(long lo)
+	{
+		return m_dfLong.format(lo);
 	}
 
 	public static String formatDouble(double dbl)

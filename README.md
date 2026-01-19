@@ -1,7 +1,6 @@
-# Big Bang
+# Black hole evaporation
 
-This is a program to obtain numerically the space-time metric of a Universe emerging from an exploding black hole,
-using a simulated annealing algorithm.
+This is a program to calculate the evolution of a perceived Universal expansion by being close to an evaporating black hole.
 
 ## How to build and run
 
