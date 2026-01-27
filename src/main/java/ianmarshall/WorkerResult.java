@@ -5,13 +5,13 @@ public class WorkerResult
 	public static class ResultData
 	{
 		private double m_dblRadius = 0.0;
-		private long m_loTime = 0L;
+		private double m_dblTime = 0.0;
 		private double m_dblMass = 0.0;
 
-		public ResultData(double dblRadius, long loTime, double dblMass)
+		public ResultData(double dblRadius, double dblTime, double dblMass)
 		{
 			m_dblRadius = dblRadius;
-			m_loTime = loTime;
+			m_dblTime = dblTime;
 			m_dblMass = dblMass;
 		}
 
@@ -20,19 +20,14 @@ public class WorkerResult
 			return m_dblRadius;
 		}
 
- // public void setRadius(double dblRadius)
- // {
- // 	m_dblRadius = dblRadius;
- // }
-
-		public long getTime()
+		public double getTime()
 		{
-			return m_loTime;
+			return m_dblTime;
 		}
 
-		public void setTime(long loTime)
+		public void setTime(double dblTime)
 		{
-			m_loTime = loTime;
+			m_dblTime = dblTime;
 		}
 
 		public double getMass()

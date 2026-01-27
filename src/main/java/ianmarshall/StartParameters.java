@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class StartParameters
 {
-	private static final Logger logger = LoggerFactory.getLogger(StartParameters.class);
+	private static final Logger s_logger = LoggerFactory.getLogger(StartParameters.class);
 	private static int N_NUMBER_OF_ARGS = 2;
 
 
@@ -53,13 +53,13 @@ public class StartParameters
 		 S_ARG_NAME_START_RADIUS_RATIO,     S_ARG_DATA_TYPE_START_RADIUS_RATIO,
 		 S_ARG_NAME_TIME_INCREMENT_SECONDS, S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS);
 
-		logger.info(sMsg);
+		s_logger.info(sMsg);
 	}
 
 	public String parseArguments(String[] asArgs)
 	{
 		StringBuilder sbError = new StringBuilder();
-		logger.info(String.format("About to parse the command line arguments \"%s\".", Arrays.asList(asArgs)));
+		s_logger.info(String.format("About to parse the command line arguments \"%s\".", Arrays.asList(asArgs)));
 
 		if (asArgs.length == 2 * N_NUMBER_OF_ARGS)
 		{
@@ -82,6 +82,10 @@ public class StartParameters
 				{
 					m_dblStartRadiusRatio = Double.parseDouble(asArgs[nIndexArgStartRadiusRatio]);
 					m_loTimeIncrementSeconds = Long.parseLong(asArgs[nIndexArgTimeIncrementSeconds]);
+
+					s_logger.info(String.format(
+					 "asArgs[nIndexArgStartRadiusRatio] = \"%s\", m_dblStartRadiusRatio = %g, m_dblStartRadiusRatio - 1.0 = %g .",
+					 asArgs[nIndexArgStartRadiusRatio], m_dblStartRadiusRatio, m_dblStartRadiusRatio - 1.0));
 
 					if (m_dblStartRadiusRatio <= 1.0)
 						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 1.0.",

@@ -71,7 +71,7 @@ public class BlackHoleEvaporation
 			 StartParameters.S_ARG_NAME_START_RADIUS_RATIO,     sStartRadiusRatio,
 			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS, sTimeIncrementSeconds));
 
-			final int N_DELAY_BEFORE_START_S = 30;
+			final int N_DELAY_BEFORE_START_S = 5;
 			logger.info(String.format("Waiting %ds before starting processing...", N_DELAY_BEFORE_START_S));
 
 			try

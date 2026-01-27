@@ -1,5 +1,9 @@
 package ianmarshall;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 
 import org.slf4j.Logger;
@@ -20,6 +24,17 @@ public class Worker implements Runnable
 		{
 			m_WorkerResult = new WorkerResult(m_bProcessingCompleted, th, m_nRun, m_rdResultData);
 			m_bStopped = true;
+
+			if (m_bwBufferedWriter != null)
+				try
+				{
+					m_bwBufferedWriter.close();
+					m_bwBufferedWriter = null;
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
 		}
 
 	}
@@ -33,10 +48,13 @@ public class Worker implements Runnable
 	private static final double K = (h * c2 * c2) / (10240 * pi * pi * G * G);
 
 	// The mass of the Universe at the Big Bang in kg (taken to be the same as its current mass)
-	private static final double DBL_UNIVERSAL_MASS = 1.5e53;
+//private static final double DBL_UNIVERSAL_MASS = 1.5e53;
+	private static final double DBL_UNIVERSAL_MASS = 1.5e13;    // Test, reducd mass
 
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
+//private static final Path S_PATH_OUTPUT_FILE = Path.of("Output.csv");
+	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
 
 	private static int m_nProcessors = 0;
 
@@ -48,6 +66,7 @@ public class Worker implements Runnable
 	private boolean m_bStopped = false;
 	private boolean m_bProcessingCompleted = false;
 	private WorkerUncaughtExceptionHandler m_wuehExceptionHandler = null;
+	private BufferedWriter m_bwBufferedWriter = null;
 	private WorkerResult m_WorkerResult = null;
 
 	/**
@@ -68,6 +87,17 @@ public class Worker implements Runnable
 		m_nRun = nRun;
 		m_rdResultData = rdResultData;
 		m_wuehExceptionHandler = new WorkerUncaughtExceptionHandler();
+
+ // FileWriter fwFileWriter = new FileWriter(S_PATH_OUTPUT_FILE.toFile(), false);
+		try
+		{
+			FileWriter fwFileWriter = new FileWriter(S_FILE_OUTPUT, m_nRun > 0);
+			m_bwBufferedWriter = new BufferedWriter(fwFileWriter);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public void stopExecution()
@@ -101,46 +131,67 @@ public class Worker implements Runnable
 		m_bStopping = false;
 		m_bStopped = false;
 		double dblStartRadiusRatio = m_spStartParameters.getStartRadiusRatio();
-		long loTimeIncrementSeconds = m_spStartParameters.getTimeIncrementSeconds();
+		double dblTimeIncrementSeconds = Long.valueOf(m_spStartParameters.getTimeIncrementSeconds()).doubleValue();
 
-		long loTime;
+		double dblTime;
 		double dblMass;
 		double dblRadius;
 
 		if (m_rdResultData != null)
 		{
-			loTime = m_rdResultData.getTime();
+			dblTime = m_rdResultData.getTime();
 			dblMass = m_rdResultData.getMass();
 			dblRadius = m_rdResultData.getRadius();
 		}
 		else
 		{
-			loTime = 0L;
+			dblTime = 0L;
 			dblMass = DBL_UNIVERSAL_MASS;
 			dblRadius = dblStartRadiusRatio * (2.0 * G * dblMass) / c2;
-			m_rdResultData = new ResultData(dblRadius, loTime, dblMass);
+			m_rdResultData = new ResultData(dblRadius, dblTime, dblMass);
 		}
 
 		if (m_nRun == 0)
-			s_logger.info("Run number, time, mass, time speed-up factor");
+		{
+			String sHeader = "Run number, time, mass, time speed-up factor";
+			s_logger.info(sHeader);
+			writeToFile(sHeader);
+		}
 
 		while ((!m_bStopping) && (dblMass > 0.0))
 		{
 			m_nRun++;
+
 			double dblTimeSpeedUpFactor = 1.0 / (1.0 - ((2 * G * dblMass) / (c2 * dblRadius)));
 			double dMdt = -K * dblTimeSpeedUpFactor / (3.0 * dblMass * dblMass);
-			dblMass += dMdt * loTimeIncrementSeconds;
-			loTime += loTimeIncrementSeconds;
+			dblMass += dMdt * dblTimeIncrementSeconds;
+			dblTime += dblTimeIncrementSeconds;
 			m_rdResultData.setMass(dblMass);
-			m_rdResultData.setTime(loTime);
+			m_rdResultData.setTime(dblTime);
 
 			if (m_nRun % N_LOG_SKIP_RATIO == 0)
-				s_logger.info(String.format("%s,%s,%s,%s",
+			{
+				String sLine = String.format("%s,%s,%s,%s",
 				 BlackHoleEvaporation.formatInteger(m_nRun),
-				 BlackHoleEvaporation.formatLong(loTime),
+				 BlackHoleEvaporation.formatDouble(dblTime),
 				 BlackHoleEvaporation.formatDouble(dblMass),
-				 BlackHoleEvaporation.formatDouble(dblTimeSpeedUpFactor)));
+				 BlackHoleEvaporation.formatDouble(dblTimeSpeedUpFactor));
+
+				s_logger.info(sLine);
+				writeToFile(sLine);
+			}
 		}
+
+		if (m_bwBufferedWriter != null)
+			try
+			{
+				m_bwBufferedWriter.close();
+				m_bwBufferedWriter = null;
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
 
 		if (dblMass <= 0.0)
 		{
@@ -152,6 +203,19 @@ public class Worker implements Runnable
 
 		m_WorkerResult = new WorkerResult(m_bProcessingCompleted, null, m_nRun, m_rdResultData);
 		m_bStopped = true;
+	}
+
+	private void writeToFile(String sLine)
+	{
+		try
+		{
+			m_bwBufferedWriter.write(sLine);
+			m_bwBufferedWriter.newLine();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	/*
