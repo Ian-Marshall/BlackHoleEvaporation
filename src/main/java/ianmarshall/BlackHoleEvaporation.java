@@ -3,8 +3,6 @@ package ianmarshall;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
-import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +43,7 @@ public class BlackHoleEvaporation
 		String sError = spStartParams.parseArguments(asArgs);
 		if (sError.isEmpty())
 		{
+			/*
 			double dblStartRadiusRatio = spStartParams.getStartRadiusRatio();
 			long loTimeIncrementSeconds = spStartParams.getTimeIncrementSeconds();
 
@@ -52,13 +51,11 @@ public class BlackHoleEvaporation
 			 StartParameters.S_ARG_NAME_START_RADIUS_RATIO.length(),
 			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS.length()));
 
-	 // String sRuns                 = formatInteger(nRuns) + "  ";
+			String sRuns                 = formatInteger(nRuns) + "  ";
 			String sStartRadiusRatio     = formatDouble(dblStartRadiusRatio);
 			String sTimeIncrementSeconds = formatLong(loTimeIncrementSeconds);
 
-			int nMaxWidthValues = Collections.max(Arrays.asList(
-			 sStartRadiusRatio.length(),
-			 sTimeIncrementSeconds.length()));
+			int nMaxWidthValues = Collections.max(Arrays.asList(sStartRadiusRatio.length(), sTimeIncrementSeconds.length()));
 
 			String sFormat = String.format("Parameter values:"
 			 + "%%n  %%%1$ss = %%%2$ss,"
@@ -70,6 +67,7 @@ public class BlackHoleEvaporation
 			logger.info(String.format(sFormat,
 			 StartParameters.S_ARG_NAME_START_RADIUS_RATIO,     sStartRadiusRatio,
 			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS, sTimeIncrementSeconds));
+			*/
 
 			final int N_DELAY_BEFORE_START_S = 5;
 			logger.info(String.format("Waiting %ds before starting processing...", N_DELAY_BEFORE_START_S));
@@ -91,6 +89,7 @@ public class BlackHoleEvaporation
 			int nRun = wrResult.getRun();
 			Throwable th = wrResult.getThrowable();
 
+			String sFormat;
 			if (bProcessingCompleted)
 				sFormat = "Processing has completed.";
 			else

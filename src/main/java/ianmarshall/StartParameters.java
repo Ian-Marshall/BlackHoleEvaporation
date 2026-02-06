@@ -8,26 +8,31 @@ import org.slf4j.LoggerFactory;
 public class StartParameters
 {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartParameters.class);
-	private static int N_NUMBER_OF_ARGS = 2;
+	private static int N_NUMBER_OF_ARGS = 0;
 
 
 	// The parameters' argument names and data types
 
+	/*
 	public  static final String      S_ARG_NAME_START_RADIUS_RATIO = "startRadiusRatio";
 	private static final String S_ARG_DATA_TYPE_START_RADIUS_RATIO = "decimal number";
 
 	public  static final String      S_ARG_NAME_TIME_INCREMENT_SECONDS = "timeIncrementSeconds";
 	private static final String S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS = "integer";
+	*/
 
 
+	/*
 	// The parameters' fields
 	private double m_dblStartRadiusRatio = 1.0;
 	private long m_loTimeIncrementSeconds = 1L;
+	*/
 
 	public StartParameters()
 	{
 	}
 
+	/*
 	public double getStartRadiusRatio()
 	{
 		return m_dblStartRadiusRatio;
@@ -37,9 +42,11 @@ public class StartParameters
 	{
 		return m_loTimeIncrementSeconds;
 	}
+	*/
 
 	public void showUsage()
 	{
+		/*
 		String sMsg = String.format(
 		   "%nUsage"
 		 + "%n-----"
@@ -52,6 +59,13 @@ public class StartParameters
 		 BlackHoleEvaporation.class.getSimpleName(),
 		 S_ARG_NAME_START_RADIUS_RATIO,     S_ARG_DATA_TYPE_START_RADIUS_RATIO,
 		 S_ARG_NAME_TIME_INCREMENT_SECONDS, S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS);
+		*/
+
+		String sMsg = String.format(
+		   "%nUsage"
+		 + "%n-----"
+		 + "%n  %s%n",
+		 BlackHoleEvaporation.class.getSimpleName());
 
 		s_logger.info(sMsg);
 	}
@@ -63,6 +77,7 @@ public class StartParameters
 
 		if (asArgs.length == 2 * N_NUMBER_OF_ARGS)
 		{
+			/*
 			int nIndexArgStartRadiusRatio = -1;
 			int nIndexArgTimeIncrementSeconds = -1;
 
@@ -83,10 +98,6 @@ public class StartParameters
 					m_dblStartRadiusRatio = Double.parseDouble(asArgs[nIndexArgStartRadiusRatio]);
 					m_loTimeIncrementSeconds = Long.parseLong(asArgs[nIndexArgTimeIncrementSeconds]);
 
-					s_logger.info(String.format(
-					 "asArgs[nIndexArgStartRadiusRatio] = \"%s\", m_dblStartRadiusRatio = %g, m_dblStartRadiusRatio - 1.0 = %g .",
-					 asArgs[nIndexArgStartRadiusRatio], m_dblStartRadiusRatio, m_dblStartRadiusRatio - 1.0));
-
 					if (m_dblStartRadiusRatio <= 1.0)
 						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 1.0.",
 						 S_ARG_NAME_START_RADIUS_RATIO, m_dblStartRadiusRatio));
@@ -102,12 +113,16 @@ public class StartParameters
 				}
 				catch (NumberFormatException e)
 				{
+					if (sbError.length() > 0)
+						sbError.append(" ");
+
 					sbError.append("At least one of the parameters has an incorrect data type.");
 				}
-			else
+			else if (N_NUMBER_OF_ARGS > 0)
 				sbError.append(String.format(
 				 "At least one of the parameters \"%s\" and \"%s\" is missing.",
 				 S_ARG_NAME_START_RADIUS_RATIO, S_ARG_NAME_TIME_INCREMENT_SECONDS));
+			*/
 		}
 		else
 			sbError.append(String.format("Please specify exactly %d parameters, each with one value.", N_NUMBER_OF_ARGS));

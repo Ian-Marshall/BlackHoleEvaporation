@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,29 +42,45 @@ public class Worker implements Runnable
 
 	}
 
-//private static final double DBL_LARGE_DIVISION_RESULT = 1.0e12;
-	private static final double h = 6.626_070_15e-34;    // The Planck constant in Js
-	private static final double c = 299_792_458;    // The speed of light in ms^-1
-	private static final double c2 = c * c;
-	private static final double G = 6.674_30e-11;        // The gravitational constant in m^3kg^-1s^-2
-	private static final double pi = Math.PI;
-	private static final double K = (h * c2 * c2) / (10240 * pi * pi * G * G);
+	private static final BigDecimal h = new BigDecimal("6.62607015e-34");    // The Planck constant in Js
+	private static final BigDecimal c = new BigDecimal(299792458);           // The speed of light in m s^-1
+	private static final BigDecimal c2 = c.multiply(c).stripTrailingZeros();
+	private static final BigDecimal G = new BigDecimal("6.6743e-11");    // The gravitational constant in m^3 kg^-1 s^-2
+	private static final BigDecimal THREE = new BigDecimal(3);
+	private static final int N_PRECISION = 100;
+	private static final MathContext MC_MATH_CONTEXT = new MathContext(N_PRECISION, RoundingMode.HALF_EVEN);
+	private static final BigDecimal K = h.multiply(c2).multiply(c2).divide(
+	 new BigDecimal(10240).multiply(new BigDecimal(Math.PI)).multiply(new BigDecimal(Math.PI)).multiply(G).multiply(G),
+	 MC_MATH_CONTEXT)
+	 .stripTrailingZeros();
 
 	// The mass of the Universe at the Big Bang in kg (taken to be the same as its current mass)
-//private static final double DBL_UNIVERSAL_MASS = 1.5e53;
-	private static final double DBL_UNIVERSAL_MASS = 1.5e13;    // Test, reducd mass
+	private static final BigDecimal BD_UNIVERSAL_MASS = new BigDecimal("1.5e53");
+//private static final BigDecimal BD_UNIVERSAL_MASS = new BigDecimal("1.5e13");    // Test, reducd mass
+
+	/*
+	private static final BigDecimal BD_START_RADIUS_RATIO =
+	//                 0         1        2         3         4         5         6         7         8         9
+	//                 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+	 new BigDecimal("1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
+	*/
+	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(new BigDecimal("1e-90"));
+
+	private static final BigDecimal BD_TIME_ONE_YEAR_IN_SECONDS = new BigDecimal("3.1536e7");
+
+	// 1^12 years
+	private static final BigDecimal BD_TIME_INCREMENT_SECONDS = new BigDecimal("1e12")
+	 .multiply(BD_TIME_ONE_YEAR_IN_SECONDS).stripTrailingZeros();
 
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
-//private static final Path S_PATH_OUTPUT_FILE = Path.of("Output.csv");
 	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
 
 	private static int m_nProcessors = 0;
 
-	private StartParameters m_spStartParameters = null;
+//private StartParameters m_spStartParameters = null;
 	private int m_nRun = 0;
 	private ResultData m_rdResultData = null;
-//private boolean m_bFirstRun = true;    // This will also be true when resuming running after a pause
 	private volatile boolean m_bStopping = false;
 	private boolean m_bStopped = false;
 	private boolean m_bProcessingCompleted = false;
@@ -83,12 +102,11 @@ public class Worker implements Runnable
 		if (m_nProcessors == 0)
 			m_nProcessors = Runtime.getRuntime().availableProcessors();
 
-		m_spStartParameters = spStartParameters;
+ // m_spStartParameters = spStartParameters;
 		m_nRun = nRun;
 		m_rdResultData = rdResultData;
 		m_wuehExceptionHandler = new WorkerUncaughtExceptionHandler();
 
- // FileWriter fwFileWriter = new FileWriter(S_PATH_OUTPUT_FILE.toFile(), false);
 		try
 		{
 			FileWriter fwFileWriter = new FileWriter(S_FILE_OUTPUT, m_nRun > 0);
@@ -130,55 +148,60 @@ public class Worker implements Runnable
 	{
 		m_bStopping = false;
 		m_bStopped = false;
-		double dblStartRadiusRatio = m_spStartParameters.getStartRadiusRatio();
-		double dblTimeIncrementSeconds = Long.valueOf(m_spStartParameters.getTimeIncrementSeconds()).doubleValue();
 
-		double dblTime;
-		double dblMass;
-		double dblRadius;
+		BigDecimal bdTime;
+		BigDecimal bdMass;
+		BigDecimal bdRadius;
 
 		if (m_rdResultData != null)
 		{
-			dblTime = m_rdResultData.getTime();
-			dblMass = m_rdResultData.getMass();
-			dblRadius = m_rdResultData.getRadius();
+			bdTime = m_rdResultData.getTime();
+			bdMass = m_rdResultData.getMass();
+			bdRadius = m_rdResultData.getRadius();
 		}
 		else
 		{
-			dblTime = 0L;
-			dblMass = DBL_UNIVERSAL_MASS;
-			dblRadius = dblStartRadiusRatio * (2.0 * G * dblMass) / c2;
-			m_rdResultData = new ResultData(dblRadius, dblTime, dblMass);
+			bdTime = BigDecimal.ZERO;
+			bdMass = BD_UNIVERSAL_MASS;
+			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(bdMass).divide(c2, MC_MATH_CONTEXT);
+			bdRadius = dbStartSchwarzschildRadius.multiply(BD_START_RADIUS_RATIO).stripTrailingZeros();
+			m_rdResultData = new ResultData(bdRadius, bdTime, bdMass);
 		}
 
 		if (m_nRun == 0)
 		{
-			String sHeader = "Run number, time, mass, time speed-up factor";
+			String sHeader = "Run number, time, time slow-down factor, mass";
 			s_logger.info(sHeader);
 			writeToFile(sHeader);
 		}
 
-		while ((!m_bStopping) && (dblMass > 0.0))
+		while ((!m_bStopping) && (bdMass.compareTo(BigDecimal.ZERO) == 1))
 		{
 			m_nRun++;
 
-			double dblTimeSpeedUpFactor = 1.0 / (1.0 - ((2 * G * dblMass) / (c2 * dblRadius)));
-			double dMdt = -K * dblTimeSpeedUpFactor / (3.0 * dblMass * dblMass);
-			dblMass += dMdt * dblTimeIncrementSeconds;
-			dblTime += dblTimeIncrementSeconds;
-			m_rdResultData.setMass(dblMass);
-			m_rdResultData.setTime(dblTime);
+			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(bdMass).divide(c2, MC_MATH_CONTEXT);
+			BigDecimal bdTimeSlowDownFactor =
+			 BigDecimal.ONE.subtract(dbStartSchwarzschildRadius.divide(bdRadius, MC_MATH_CONTEXT));
+			BigDecimal bd_dMdt = K.negate().divide(THREE.multiply(bdTimeSlowDownFactor).multiply(bdMass).multiply(bdMass),
+			 MC_MATH_CONTEXT);
+			bdMass = bdMass.add(bd_dMdt.multiply(BD_TIME_INCREMENT_SECONDS)).stripTrailingZeros();
+			bdTime = bdTime.add(BD_TIME_INCREMENT_SECONDS).stripTrailingZeros();
+			m_rdResultData.setMass(bdMass);
+			m_rdResultData.setTime(bdTime);
 
 			if (m_nRun % N_LOG_SKIP_RATIO == 0)
 			{
-				String sLine = String.format("%s,%s,%s,%s",
-				 BlackHoleEvaporation.formatInteger(m_nRun),
-				 BlackHoleEvaporation.formatDouble(dblTime),
-				 BlackHoleEvaporation.formatDouble(dblMass),
-				 BlackHoleEvaporation.formatDouble(dblTimeSpeedUpFactor));
+				String sTime = bdTime.toString();
+				String sTimeSlowDownFactor = bdTimeSlowDownFactor.toString();
+				String sMass = bdMass.toString();
 
-				s_logger.info(sLine);
-				writeToFile(sLine);
+
+				String sLogLine = String.format("%s,%s,%s,%s", BlackHoleEvaporation.formatInteger(m_nRun), sTime,
+				 sTimeSlowDownFactor, sMass);
+				s_logger.info(sLogLine);
+
+				String sCSVLine = String.format("%d,%s,%s,%s", m_nRun, sTime, sTimeSlowDownFactor, sMass);
+				writeToFile(sCSVLine);
 			}
 		}
 
@@ -193,7 +216,7 @@ public class Worker implements Runnable
 				e.printStackTrace();
 			}
 
-		if (dblMass <= 0.0)
+		if (bdMass.compareTo(BigDecimal.ZERO) <= 0)
 		{
 			m_bProcessingCompleted = true;
 			s_logger.info("All processing has been completed.");
@@ -232,6 +255,7 @@ public class Worker implements Runnable
 	/*
 	private double safeDivide(double dblDividend, double dblDivisor)
 	{
+ // final double DBL_LARGE_DIVISION_RESULT = 1.0e12;
 		double dblResult;
 
 		if (dblDividend == 0.0)

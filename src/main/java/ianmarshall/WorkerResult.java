@@ -1,43 +1,45 @@
 package ianmarshall;
 
+import java.math.BigDecimal;
+
 public class WorkerResult
 {
 	public static class ResultData
 	{
-		private double m_dblRadius = 0.0;
-		private double m_dblTime = 0.0;
-		private double m_dblMass = 0.0;
+		private BigDecimal m_bdRadius = null;
+		private BigDecimal m_bdTime = null;
+		private BigDecimal m_bdMass = null;
 
-		public ResultData(double dblRadius, double dblTime, double dblMass)
+		public ResultData(BigDecimal bdRadius, BigDecimal bdTime, BigDecimal bdMass)
 		{
-			m_dblRadius = dblRadius;
-			m_dblTime = dblTime;
-			m_dblMass = dblMass;
+			m_bdRadius = bdRadius;
+			m_bdTime = bdTime;
+			m_bdMass = bdMass;
 		}
 
-		public double getRadius()
+		public BigDecimal getRadius()
 		{
-			return m_dblRadius;
+			return m_bdRadius;
 		}
 
-		public double getTime()
+		public BigDecimal getTime()
 		{
-			return m_dblTime;
+			return m_bdTime;
 		}
 
-		public void setTime(double dblTime)
+		public void setTime(BigDecimal bdTime)
 		{
-			m_dblTime = dblTime;
+			m_bdTime = bdTime;
 		}
 
-		public double getMass()
+		public BigDecimal getMass()
 		{
-			return m_dblMass;
+			return m_bdMass;
 		}
 
-		public void setMass(double dblMass)
+		public void setMass(BigDecimal bdMass)
 		{
-			m_dblMass = dblMass;
+			m_bdMass = bdMass;
 		}
 	}
 
