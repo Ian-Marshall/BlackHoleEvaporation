@@ -69,7 +69,8 @@ public class BlackHoleEvaporation
 			 StartParameters.S_ARG_NAME_TIME_INCREMENT_SECONDS, sTimeIncrementSeconds));
 			*/
 
-			final int N_DELAY_BEFORE_START_S = 5;
+			/*
+			final int N_DELAY_BEFORE_START_S = 30;
 			logger.info(String.format("Waiting %ds before starting processing...", N_DELAY_BEFORE_START_S));
 
 			try
@@ -82,6 +83,7 @@ public class BlackHoleEvaporation
 			}
 
 			logger.info(String.format("Finished waiting %ds.", N_DELAY_BEFORE_START_S));
+			*/
 
 			Supervisor supervisor = new Supervisor(spStartParams);
 			WorkerResult wrResult = supervisor.execute();

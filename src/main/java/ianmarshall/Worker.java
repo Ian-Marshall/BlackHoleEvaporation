@@ -64,13 +64,16 @@ public class Worker implements Runnable
 	//                 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
 	 new BigDecimal("1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
 	*/
-	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(new BigDecimal("1e-90"));
+	private static final BigDecimal BD_START_RADIUS_RATIO_FRACTION = new BigDecimal("1e-90");
+	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(BD_START_RADIUS_RATIO_FRACTION);
 
-	private static final BigDecimal BD_TIME_ONE_YEAR_IN_SECONDS = new BigDecimal("3.1536e7");
+	private static final BigDecimal BD_ONE_YEAR_IN_SECONDS = new BigDecimal("3.1536e7");
 
-	// 1^12 years
-	private static final BigDecimal BD_TIME_INCREMENT_SECONDS = new BigDecimal("1e12")
-	 .multiply(BD_TIME_ONE_YEAR_IN_SECONDS).stripTrailingZeros();
+	// 2.7007e46 is too big
+	// 2.7006e46 is too small
+	private static final String s_sTimeIncrementSeconds = "2.7006e46";
+	private static final BigDecimal BD_TIME_INCREMENT_SECONDS = new BigDecimal(s_sTimeIncrementSeconds)
+	 .multiply(BD_ONE_YEAR_IN_SECONDS).stripTrailingZeros();
 
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
@@ -170,7 +173,12 @@ public class Worker implements Runnable
 
 		if (m_nRun == 0)
 		{
-			String sHeader = "Run number, time, time slow-down factor, mass";
+			s_logger.info(String.format("Start radius ratio: %s + %s, time increment in years: %s.",
+			 BigDecimal.ONE.toString(),
+			 BD_START_RADIUS_RATIO_FRACTION.toString(),
+			 BD_TIME_INCREMENT_SECONDS.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros().toString()));
+
+			String sHeader = "Run number, time in years, time slow-down factor, mass in kg";
 			s_logger.info(sHeader);
 			writeToFile(sHeader);
 		}
@@ -191,16 +199,27 @@ public class Worker implements Runnable
 
 			if (m_nRun % N_LOG_SKIP_RATIO == 0)
 			{
-				String sTime = bdTime.toString();
+				final int N_MINIMUM_PRECISION = 5;
+				final int N_MINIMUM_LENGTH_TIME_IN_YEARS = 10;
+
+				String sNRun = BlackHoleEvaporation.formatInteger(m_nRun);
+				int nSpacesToPrefix = N_MINIMUM_LENGTH_TIME_IN_YEARS - sNRun.length();
+				if (nSpacesToPrefix > 0)
+					sNRun = " ".repeat(nSpacesToPrefix) + sNRun;
+
+				BigDecimal bdTimeInYears = bdTime.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros();
+				int nZeroesToAdd = N_MINIMUM_PRECISION - bdTimeInYears.precision();
+				if (nZeroesToAdd > 0)
+					bdTimeInYears = bdTimeInYears.setScale(bdTimeInYears.scale() + nZeroesToAdd);
+
+				String sTimeInYears = bdTimeInYears.toString();
 				String sTimeSlowDownFactor = bdTimeSlowDownFactor.toString();
-				String sMass = bdMass.toString();
+				String sMassInKg = bdMass.toString();
 
-
-				String sLogLine = String.format("%s,%s,%s,%s", BlackHoleEvaporation.formatInteger(m_nRun), sTime,
-				 sTimeSlowDownFactor, sMass);
+				String sLogLine = String.format("%s,%s,%s,%s", sNRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg);
 				s_logger.info(sLogLine);
 
-				String sCSVLine = String.format("%d,%s,%s,%s", m_nRun, sTime, sTimeSlowDownFactor, sMass);
+				String sCSVLine = String.format("%d,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg);
 				writeToFile(sCSVLine);
 			}
 		}
@@ -237,38 +256,7 @@ public class Worker implements Runnable
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
-
-	/*
-	 * Divide two numbers safely without raising an exception or returning NaN or infinity.
-	 * @param dblDividend
-	 *   The number to be divided.
-	 * @param dblDivisor
-	 *   The number to divide by.
-	 * @return
-	 *   If the dividend is zero then (if the divisor is also zero then <code>1.0</code> else <code>0.0</code>)
-	 *   else if the divisor is zero then the signum of the dividend multiplied by <code>DBL_LARGE_DIVISION_RESULT</code>
-	 *   otherwise the result of the division.
-	 */
-	/*
-	private double safeDivide(double dblDividend, double dblDivisor)
-	{
- // final double DBL_LARGE_DIVISION_RESULT = 1.0e12;
-		double dblResult;
-
-		if (dblDividend == 0.0)
-			if (dblDivisor == 0.0)
-				dblResult = 1.0;
-			else
-				dblResult = 0.0;
-		else if (dblDivisor == 0.0)
-			dblResult = Math.signum(dblDividend) * DBL_LARGE_DIVISION_RESULT;
-		else
-			dblResult = dblDividend / dblDivisor;
-
-		return dblResult;
-	}
-	*/
 }
