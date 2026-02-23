@@ -1,5 +1,6 @@
 package ianmarshall;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 import org.slf4j.Logger;
@@ -8,64 +9,75 @@ import org.slf4j.LoggerFactory;
 public class StartParameters
 {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartParameters.class);
-	private static int N_NUMBER_OF_ARGS = 0;
+	private static int N_NUMBER_OF_ARGS = 3;
 
 
 	// The parameters' argument names and data types
 
-	/*
-	public  static final String      S_ARG_NAME_START_RADIUS_RATIO = "startRadiusRatio";
-	private static final String S_ARG_DATA_TYPE_START_RADIUS_RATIO = "decimal number";
+	private static final String      S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS = "timeIncrementTooBigSeconds";
+	private static final String S_ARG_DATA_TYPE_TIME_INCREMENT_TOO_BIG_SECONDS = "BigDecimal string";
 
-	public  static final String      S_ARG_NAME_TIME_INCREMENT_SECONDS = "timeIncrementSeconds";
-	private static final String S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS = "integer";
-	*/
+	private static final String      S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS = "timeIncrementTooSmallSeconds";
+	private static final String S_ARG_DATA_TYPE_TIME_INCREMENT_TOO_SMALL_SECONDS = "BigDecimal string";
+
+	private static final String      S_ARG_NAME_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG =
+	 "minimumNumberOfRunsForTimeIncrementNotTooBig";
+	private static final String S_ARG_DATA_TYPE_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG = "integer";
 
 
-	/*
 	// The parameters' fields
-	private double m_dblStartRadiusRatio = 1.0;
-	private long m_loTimeIncrementSeconds = 1L;
-	*/
+	private BigDecimal m_bdTimeIncrementTooBigSeconds = BigDecimal.ZERO;
+	private BigDecimal m_bdTimeIncrementTooSmallSeconds = BigDecimal.ZERO;
+	private int m_nMinRunsForTimeIncrementNotTooBig = 0;
 
 	public StartParameters()
 	{
 	}
 
-	/*
-	public double getStartRadiusRatio()
+	public BigDecimal getTimeIncrementTooBigSeconds()
 	{
-		return m_dblStartRadiusRatio;
+		return m_bdTimeIncrementTooBigSeconds;
 	}
 
-	public long getTimeIncrementSeconds()
+	public void setTimeIncrementTooBigSeconds(BigDecimal bdTimeIncrementTooBigSeconds)
 	{
-		return m_loTimeIncrementSeconds;
+		m_bdTimeIncrementTooBigSeconds = bdTimeIncrementTooBigSeconds;
 	}
-	*/
+
+	public BigDecimal getTimeIncrementTooSmallSeconds()
+	{
+		return m_bdTimeIncrementTooSmallSeconds;
+	}
+
+	public void setTimeIncrementTooSmallSeconds(BigDecimal bdTimeIncrementTooSmallSeconds)
+	{
+		m_bdTimeIncrementTooSmallSeconds = bdTimeIncrementTooSmallSeconds;
+	}
+
+	public int getNMinRunsForTimeIncrementNotTooBig()
+	{
+		return m_nMinRunsForTimeIncrementNotTooBig;
+	}
 
 	public void showUsage()
 	{
-		/*
 		String sMsg = String.format(
 		   "%nUsage"
 		 + "%n-----"
-		 + "%n  %s %s [%s] %s [%s]%n"
-		 + "%n[%2$s] is the initial ratio of the distance of the observer from the centre of black hole to its Schwarzschild radius."
-		 + " This must be greater than one."
-		 + "%n[%4$s] is the increase in the elapsed time as experienced by the observer, in seconds, for each iteration."
+		 + "%n  %s %s [%s] %s [%s] %s [%s]%n"
+		 + "%n[%2$s] is the increase in the elapsed time as experienced by the observer for each iteration, in seconds,"
+		 + " that is too big to be suitable for iterating."
 		 + " This must be greater than zero."
+		 + "%n[%4$s] is the increase in the elapsed time as experienced by the observer for each iteration, in seconds,"
+		 + " that is too small to be suitable for iterating."
+		 + " This must be greater than zero."
+		 + "%n[%6$s] is the number of runs which, if reached, means that the current time increment is not too big"
+		 + " to be suitable for iterating. If this less than or equal to zero then this argument will be ignored."
 		 + "%n",
 		 BlackHoleEvaporation.class.getSimpleName(),
-		 S_ARG_NAME_START_RADIUS_RATIO,     S_ARG_DATA_TYPE_START_RADIUS_RATIO,
-		 S_ARG_NAME_TIME_INCREMENT_SECONDS, S_ARG_DATA_TYPE_TIME_INCREMENT_SECONDS);
-		*/
-
-		String sMsg = String.format(
-		   "%nUsage"
-		 + "%n-----"
-		 + "%n  %s%n",
-		 BlackHoleEvaporation.class.getSimpleName());
+		 S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS,                S_ARG_DATA_TYPE_TIME_INCREMENT_TOO_BIG_SECONDS,
+		 S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS,              S_ARG_DATA_TYPE_TIME_INCREMENT_TOO_SMALL_SECONDS,
+		 S_ARG_NAME_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG, S_ARG_DATA_TYPE_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG);
 
 		s_logger.info(sMsg);
 	}
@@ -77,39 +89,37 @@ public class StartParameters
 
 		if (asArgs.length == 2 * N_NUMBER_OF_ARGS)
 		{
-			/*
-			int nIndexArgStartRadiusRatio = -1;
-			int nIndexArgTimeIncrementSeconds = -1;
+			int nIndexArgTimeIncrementTooBigSeconds = -1;
+			int nIndexArgTimeIncrementTooSmallSeconds = -1;
+			int nIndexArgNMinRunsForTimeIncrementNotTooBig = -1;
 
 			for (int i = 0; i < N_NUMBER_OF_ARGS; i++)
 			{
 				int nIndexArgName = 2 * i;
 
-				if (S_ARG_NAME_START_RADIUS_RATIO.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgStartRadiusRatio = nIndexArgName + 1;
-				else if (S_ARG_NAME_TIME_INCREMENT_SECONDS.equalsIgnoreCase(asArgs[nIndexArgName]))
-					nIndexArgTimeIncrementSeconds = nIndexArgName + 1;
-
+				if      (asArgs[nIndexArgName].equalsIgnoreCase(S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS))
+					nIndexArgTimeIncrementTooBigSeconds = nIndexArgName + 1;
+				else if (asArgs[nIndexArgName].equalsIgnoreCase(S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS))
+					nIndexArgTimeIncrementTooSmallSeconds = nIndexArgName + 1;
+				else if (asArgs[nIndexArgName].equalsIgnoreCase(S_ARG_NAME_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG))
+					nIndexArgNMinRunsForTimeIncrementNotTooBig = nIndexArgName + 1;
 			}
 
-			if ((nIndexArgStartRadiusRatio > -1) && (nIndexArgTimeIncrementSeconds > -1))
+			if ((nIndexArgTimeIncrementTooBigSeconds > -1) && (nIndexArgTimeIncrementTooSmallSeconds > -1)
+			 && (nIndexArgNMinRunsForTimeIncrementNotTooBig > -1))
 				try
 				{
-					m_dblStartRadiusRatio = Double.parseDouble(asArgs[nIndexArgStartRadiusRatio]);
-					m_loTimeIncrementSeconds = Long.parseLong(asArgs[nIndexArgTimeIncrementSeconds]);
+					m_bdTimeIncrementTooBigSeconds = new BigDecimal(asArgs[nIndexArgTimeIncrementTooBigSeconds]);
+					m_bdTimeIncrementTooSmallSeconds = new BigDecimal(asArgs[nIndexArgTimeIncrementTooSmallSeconds]);
+					m_nMinRunsForTimeIncrementNotTooBig = Integer.parseInt(asArgs[nIndexArgNMinRunsForTimeIncrementNotTooBig]);
 
-					if (m_dblStartRadiusRatio <= 1.0)
-						sbError.append(String.format("The parameter \"%s\" of value %f must be greater than 1.0.",
-						 S_ARG_NAME_START_RADIUS_RATIO, m_dblStartRadiusRatio));
+					if (m_bdTimeIncrementTooBigSeconds.compareTo(BigDecimal.ZERO) < 1)
+						sbError.append(String.format("The parameter %s of value \"%s\" must be greater than zero.",
+						 S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS, asArgs[nIndexArgTimeIncrementTooBigSeconds]));
 
-					if (m_loTimeIncrementSeconds <= 0)
-					{
-						if (sbError.length() > 0)
-							sbError.append(" ");
-
-						sbError.append(String.format("The parameter \"%s\" of value %d must be greater than 0.",
-						 S_ARG_NAME_TIME_INCREMENT_SECONDS, m_loTimeIncrementSeconds));
-					}
+					if (m_bdTimeIncrementTooSmallSeconds.compareTo(BigDecimal.ZERO) < 1)
+						sbError.append(String.format("The parameter %s of value \"%s\" must be greater than zero.",
+						 S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS, asArgs[nIndexArgTimeIncrementTooSmallSeconds]));
 				}
 				catch (NumberFormatException e)
 				{
@@ -118,11 +128,11 @@ public class StartParameters
 
 					sbError.append("At least one of the parameters has an incorrect data type.");
 				}
-			else if (N_NUMBER_OF_ARGS > 0)
-				sbError.append(String.format(
-				 "At least one of the parameters \"%s\" and \"%s\" is missing.",
-				 S_ARG_NAME_START_RADIUS_RATIO, S_ARG_NAME_TIME_INCREMENT_SECONDS));
-			*/
+			else
+				sbError.append(String.format("At least one of the parameters %s, %s and %s is missing.",
+				 S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS,
+				 S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS,
+				 S_ARG_NAME_N_MINIMUM_RUNS_FOR_TIME_INCREMENT_NOT_TOO_BIG));
 		}
 		else
 			sbError.append(String.format("Please specify exactly %d parameters, each with one value.", N_NUMBER_OF_ARGS));

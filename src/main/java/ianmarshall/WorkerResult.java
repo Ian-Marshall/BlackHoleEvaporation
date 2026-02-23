@@ -9,12 +9,17 @@ public class WorkerResult
 		private BigDecimal m_bdRadius = null;
 		private BigDecimal m_bdTime = null;
 		private BigDecimal m_bdMass = null;
+		private BigDecimal m_bdTimeIncrementTooBigSeconds = null;
+		private BigDecimal m_bdTimeIncrementTooSmallSeconds = null;
 
-		public ResultData(BigDecimal bdRadius, BigDecimal bdTime, BigDecimal bdMass)
+		public ResultData(BigDecimal bdRadius, BigDecimal bdTime, BigDecimal bdMass,
+		 BigDecimal bdTimeIncrementTooBigSeconds, BigDecimal bdTimeIncrementTooSmallSeconds)
 		{
 			m_bdRadius = bdRadius;
 			m_bdTime = bdTime;
 			m_bdMass = bdMass;
+			m_bdTimeIncrementTooBigSeconds = bdTimeIncrementTooBigSeconds;
+			m_bdTimeIncrementTooSmallSeconds = bdTimeIncrementTooSmallSeconds;
 		}
 
 		public BigDecimal getRadius()
@@ -40,6 +45,22 @@ public class WorkerResult
 		public void setMass(BigDecimal bdMass)
 		{
 			m_bdMass = bdMass;
+		}
+
+		public BigDecimal getTimeIncrementTooBigSeconds() {
+			return m_bdTimeIncrementTooBigSeconds;
+		}
+
+		public void setTimeIncrementTooBigSeconds(BigDecimal bdTimeIncrementTooBigSeconds) {
+			m_bdTimeIncrementTooBigSeconds = bdTimeIncrementTooBigSeconds;
+		}
+
+		public BigDecimal getTimeIncrementTooSmallSeconds() {
+			return m_bdTimeIncrementTooSmallSeconds;
+		}
+
+		public void setTimeIncrementTooSmallSeconds(BigDecimal bdTimeIncrementTooSmallSeconds) {
+			m_bdTimeIncrementTooSmallSeconds = bdTimeIncrementTooSmallSeconds;
 		}
 	}
 
