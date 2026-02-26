@@ -64,7 +64,6 @@ public class Worker implements Runnable
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
 	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
-	private static final boolean B_MODE_HOMING_IN_ON_TIME_INCREMENT = true;
 
 	private static int m_nProcessors = 0;
 
@@ -151,7 +150,7 @@ public class Worker implements Runnable
 		{
 			execute();
 
-			if ((!m_bStopping) && B_MODE_HOMING_IN_ON_TIME_INCREMENT && (m_nMinRunsForTimeIncrementNotTooBig > 0)
+			if ((!m_bStopping) && (m_nMinRunsForTimeIncrementNotTooBig > 0)
 			 && (m_bdTimeIncrementTooBigSeconds.subtract(m_bdTimeIncrementTooSmallSeconds).compareTo(BigDecimal.ONE) >= 0))
 			{
 				boolean bTimeIncrementTooBig = false;
@@ -179,9 +178,8 @@ public class Worker implements Runnable
 				 bTimeIncrementTooBig ? "too big" : "too small", m_nRun));
 			}
 		}
-		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1)
-		 && ((!B_MODE_HOMING_IN_ON_TIME_INCREMENT)
-		     || ((m_bdTimeIncrementTooBigSeconds.subtract(m_bdTimeIncrementTooSmallSeconds).compareTo(BigDecimal.ONE) >= 0))));
+		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1) && ((m_nMinRunsForTimeIncrementNotTooBig <= 0)
+		 || (m_bdTimeIncrementTooBigSeconds.subtract(m_bdTimeIncrementTooSmallSeconds).compareTo(BigDecimal.ONE) >= 0)));
 
 		if (m_bwBufferedWriter != null)
 			try
@@ -199,7 +197,7 @@ public class Worker implements Runnable
 			m_bProcessingCompleted = true;
 			s_logger.info("All processing has been completed.");
 		}
-		else if (B_MODE_HOMING_IN_ON_TIME_INCREMENT
+		else if ((m_nMinRunsForTimeIncrementNotTooBig > 0)
 		 && (m_bdTimeIncrementTooBigSeconds.subtract(m_bdTimeIncrementTooSmallSeconds).compareTo(BigDecimal.ONE) < 0))
 		{
 			m_bProcessingCompleted = true;
@@ -248,12 +246,11 @@ public class Worker implements Runnable
 		if (m_nRun == 0)
 		{
 			s_logger.info(String.format("Universal mass: %skg, start radius ratio: %s + %s,"
-			 + " homing-in-on-time-increment mode: %b, \"too big\" time increment: %ss, \"too small\" time increment: %ss,"
+			 + " \"too big\" time increment: %ss, \"too small\" time increment: %ss,"
 			 + " minimum number of runs for not-\"too-big\"-a-time increment: %s.",
 			 m_bdMass.stripTrailingZeros().toString(),
 			 BigDecimal.ONE.toString(),
 			 BD_START_RADIUS_RATIO_FRACTION.toString(),
-			 B_MODE_HOMING_IN_ON_TIME_INCREMENT,
 			 m_bdTimeIncrementTooBigSeconds.stripTrailingZeros().toString(),
 			 m_bdTimeIncrementTooSmallSeconds.stripTrailingZeros().toString(),
 			 BlackHoleEvaporation.formatInteger(m_nMinRunsForTimeIncrementNotTooBig)));
@@ -267,13 +264,13 @@ public class Worker implements Runnable
 		m_nRunForTimeIncrement = 0;
 
 		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1)
-		 && ((!B_MODE_HOMING_IN_ON_TIME_INCREMENT)
+		 && ((m_nMinRunsForTimeIncrementNotTooBig <= 0)
 		     || ((m_bdTimeIncrementTooBigSeconds.subtract(m_bdTimeIncrementTooSmallSeconds).compareTo(BigDecimal.ONE) >= 0)
-		         && ((m_nMinRunsForTimeIncrementNotTooBig <= 0)
-						     || (m_nRunForTimeIncrement < m_nMinRunsForTimeIncrementNotTooBig)))))
+		         && (m_nRunForTimeIncrement < m_nMinRunsForTimeIncrementNotTooBig))))
 		{
 			m_nRun++;
 			m_nRunForTimeIncrement++;
+
 			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(m_bdMass).divide(c2, MC_MATH_CONTEXT);
 			BigDecimal bdTimeSlowDownFactor =
 			 BigDecimal.ONE.subtract(dbStartSchwarzschildRadius.divide(m_bdRadius, MC_MATH_CONTEXT));
