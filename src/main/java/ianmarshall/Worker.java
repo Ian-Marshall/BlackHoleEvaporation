@@ -59,11 +59,17 @@ public class Worker implements Runnable
 //private static final BigDecimal BD_UNIVERSAL_MASS = new BigDecimal("1.5e13");    // Test, reduced mass
 
 	private static final BigDecimal BD_START_RADIUS_RATIO_FRACTION = new BigDecimal("1e-90");
+	private static final BigDecimal BD_BASE_TIME_INCREMENT = new BigDecimal("3e52");
 	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(BD_START_RADIUS_RATIO_FRACTION);
 	private static final BigDecimal BD_ONE_YEAR_IN_SECONDS = new BigDecimal("3.1536e7");
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
 	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
+	private static final BigDecimal BD_TEN_TO_THE_2 = BigDecimal.TEN.pow(2);
+	private static final BigDecimal BD_TEN_TO_THE_3 = BigDecimal.TEN.pow(3);
+	private static final BigDecimal BD_TEN_TO_THE_4 = BigDecimal.TEN.pow(4);
+	private static final BigDecimal BD_TEN_TO_THE_5 = BigDecimal.TEN.pow(5);
+	private static final BigDecimal BD_TEN_TO_THE_6 = BigDecimal.TEN.pow(6);
 
 	private static int m_nProcessors = 0;
 
@@ -145,6 +151,26 @@ public class Worker implements Runnable
 	{
 		m_bStopped = false;
 		m_bStopping = false;
+
+		/*
+		testToScientificFormat(new BigDecimal(
+		 "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+		 .negate());
+
+		testToScientificFormat(new BigDecimal(
+		 "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"));
+
+		testToScientificFormat(new BigDecimal("-0.001"));
+		testToScientificFormat(new BigDecimal("0.001"));
+
+		testToScientificFormat(BigDecimal.TEN.negate());
+		testToScientificFormat(BigDecimal.TWO.negate());
+		testToScientificFormat(BigDecimal.ONE.negate());
+		testToScientificFormat(BigDecimal.ZERO);
+		testToScientificFormat(BigDecimal.ONE);
+		testToScientificFormat(BigDecimal.TWO);
+		testToScientificFormat(BigDecimal.TEN);
+		*/
 
 		do
 		{
@@ -234,8 +260,11 @@ public class Worker implements Runnable
 			 m_bdTimeIncrementTooSmallSeconds);
 		}
 
-		m_bdTimeIncrement = m_bdTimeIncrementTooBigSeconds.add(m_bdTimeIncrementTooSmallSeconds)
-		 .divide(BigDecimal.TWO, MC_MATH_CONTEXT).stripTrailingZeros();
+		if (m_nMinRunsForTimeIncrementNotTooBig > 0)
+			m_bdTimeIncrement = m_bdTimeIncrementTooBigSeconds.add(m_bdTimeIncrementTooSmallSeconds)
+			 .divide(BigDecimal.TWO, MC_MATH_CONTEXT).stripTrailingZeros();
+		else
+			m_bdTimeIncrement = calculateTimeIncrement(m_nRun);
 
 		s_logger.info(String.format("m_bdTimeIncrementTooBigSeconds = %ss, m_bdTimeIncrementTooSmallSeconds = %ss,"
 		 + " m_bdTimeIncrement = %ss.",
@@ -255,12 +284,10 @@ public class Worker implements Runnable
 			 m_bdTimeIncrementTooSmallSeconds.stripTrailingZeros().toString(),
 			 BlackHoleEvaporation.formatInteger(m_nMinRunsForTimeIncrementNotTooBig)));
 
-			String sHeader = "Run number, time in years, time slow-down factor, mass in kg";
-			s_logger.info(sHeader);
-			writeToFile(sHeader);
+			s_logger.info("Run number, time slow-down factor, mass in kg");
+			writeToFile("Run number, time in years, time slow-down factor, mass in kg");
 		}
 
-		m_nRun = 0;
 		m_nRunForTimeIncrement = 0;
 
 		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1)
@@ -276,15 +303,30 @@ public class Worker implements Runnable
 			 BigDecimal.ONE.subtract(dbStartSchwarzschildRadius.divide(m_bdRadius, MC_MATH_CONTEXT));
 			BigDecimal bd_dMdt = K.negate().divide(THREE.multiply(bdTimeSlowDownFactor).multiply(m_bdMass).multiply(m_bdMass),
 			 MC_MATH_CONTEXT);
-			m_bdMass = m_bdMass.add(bd_dMdt.multiply(m_bdTimeIncrement)).stripTrailingZeros();
+			BigDecimal bdPreviousMass = m_bdMass;
+			BigDecimal bd_deltaM = bd_dMdt.multiply(m_bdTimeIncrement);
+			m_bdMass = m_bdMass.add(bd_deltaM).stripTrailingZeros();
 			m_bdTime = m_bdTime.add(m_bdTimeIncrement).stripTrailingZeros();
 			m_rdResultData.setMass(m_bdMass);
 			m_rdResultData.setTime(m_bdTime);
 
-			if (m_nRun % N_LOG_SKIP_RATIO == 0)
+			if (m_nMinRunsForTimeIncrementNotTooBig <= 0)
+				m_bdTimeIncrement = calculateTimeIncrement(m_nRun);
+
+			if (reportRun(m_nRun))
 			{
+				if (m_nRun < N_LOG_SKIP_RATIO)
+					s_logger.info(String.format("Worker.execute():"
+					 + "%n  m_nRun            = %d,"
+					 + "%n  m_bdTimeIncrement = \"%s\","
+					 + "%n  bdPreviousMass    = \"%s\","
+					 + "%n  bd_deltaM         = \"%s\","
+					 + "%n  m_bdMass          = \"%s\".",
+					 m_nRun, toScientificFormat(m_bdTimeIncrement), toScientificFormat(bdPreviousMass),
+					 toScientificFormat(bd_deltaM), toScientificFormat(m_bdMass)));
+
 				final int N_MINIMUM_PRECISION = 5;
-				final int N_MINIMUM_LENGTH_TIME_IN_YEARS = 10;
+				final int N_MINIMUM_LENGTH_TIME_IN_YEARS = 11;
 
 				String sNRun = BlackHoleEvaporation.formatInteger(m_nRun);
 				int nSpacesToPrefix = N_MINIMUM_LENGTH_TIME_IN_YEARS - sNRun.length();
@@ -296,15 +338,14 @@ public class Worker implements Runnable
 				if (nZeroesToAdd > 0)
 					bdTimeInYears = bdTimeInYears.setScale(bdTimeInYears.scale() + nZeroesToAdd);
 
+				String sTimeSlowDownFactor = toScientificFormat(bdTimeSlowDownFactor);
+				String sMassInKg = toScientificFormat(m_bdMass);
+				s_logger.info(String.format("%s, %s, %s", sNRun, sTimeSlowDownFactor, sMassInKg));
+
 				String sTimeInYears = bdTimeInYears.toString();
-				String sTimeSlowDownFactor = bdTimeSlowDownFactor.toString();
-				String sMassInKg = m_bdMass.toString();
-
-				String sLogLine = String.format("%s,%s,%s,%s", sNRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg);
-				s_logger.info(sLogLine);
-
-				String sCSVLine = String.format("%d,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg);
-				writeToFile(sCSVLine);
+				sTimeSlowDownFactor = bdTimeSlowDownFactor.toString();
+				sMassInKg = m_bdMass.toString();
+				writeToFile(String.format("%d,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg));
 			}
 		}
 	}
@@ -320,5 +361,92 @@ public class Worker implements Runnable
 		{
 			throw new RuntimeException(e);
 		}
+	}
+
+	/*
+	private void testToScientificFormat(BigDecimal bd)
+	{
+		s_logger.info(String.format("Worker.testToScientificFormat(...):"
+		 + "%n  bd.stripTrailingZeros().toString() = \"%s\","
+		 + "%n  toScientificFormat(bd)             = \"%s\".",
+		 bd.stripTrailingZeros().toString(), toScientificFormat(bd)));
+	}
+	*/
+
+	private String toScientificFormat(BigDecimal bd)
+	{
+		StringBuilder sbResult = new StringBuilder();
+		bd = bd.stripTrailingZeros();
+		int nPrecision = bd.precision();
+		int nScale = bd.scale();
+		int nExponent = nPrecision - nScale - 1;
+		String sDigits = bd.unscaledValue().abs().toString();
+
+		if (bd.signum() < 0)
+			sbResult.append('-');
+
+		sbResult.append(sDigits.substring(0, 1));
+
+		if (sDigits.length() > 1)
+		{
+			sbResult.append('.');
+			sbResult.append(sDigits.substring(1));
+		}
+
+		sbResult.append("E");
+
+		if (nExponent > 0)
+			sbResult.append('+');
+
+		sbResult.append(nExponent);
+		return sbResult.toString();
+	}
+
+	/*
+	private BigDecimal calculateTimeIncrement(BigDecimal bdTime)
+	{
+		BigDecimal bdResult = BD_BASE_TIME_INCREMENT;
+
+		if      (bdTime.compareTo(BigDecimal.TEN)  < 0)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_6);
+		else if (bdTime.compareTo(BD_TEN_TO_THE_2) < 0)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_5);
+		else if (bdTime.compareTo(BD_TEN_TO_THE_3) < 0)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_4);
+		else if (bdTime.compareTo(BD_TEN_TO_THE_4) < 0)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_3);
+		else if (bdTime.compareTo(BD_TEN_TO_THE_5) < 0)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_2);
+		else if (bdTime.compareTo(BD_TEN_TO_THE_6) < 0)
+			bdResult = bdResult.divide(BigDecimal.TEN);
+
+		return bdResult;
+	}
+	*/
+
+	private BigDecimal calculateTimeIncrement(int nRun)
+	{
+		BigDecimal bdResult = BD_BASE_TIME_INCREMENT;
+
+		if      (nRun <        10)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_6);
+		else if (nRun <       100)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_5);
+		else if (nRun <     1_000)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_4);
+		else if (nRun <    10_000)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_3);
+		else if (nRun <   100_000)
+			bdResult = bdResult.divide(BD_TEN_TO_THE_2);
+		else if (nRun < 1_000_000)
+			bdResult = bdResult.divide(BigDecimal.TEN);
+
+		return bdResult;
+	}
+
+	private boolean reportRun(int nRun)
+	{
+		return (nRun % N_LOG_SKIP_RATIO == 0) || (nRun == 1) || (nRun == 10) || (nRun == 100) || (nRun == 1_000)
+		 || (nRun == 10_000) || (nRun == 100_000);
 	}
 }

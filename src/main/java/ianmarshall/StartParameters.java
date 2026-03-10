@@ -68,9 +68,11 @@ public class StartParameters
 		 + "%n[%2$s] is the increase in the elapsed time as experienced by the observer for each iteration, in seconds,"
 		 + " that is too big to be suitable for iterating."
 		 + " This must be greater than zero."
+		 + " If %6$s less than or equal to zero then this argument will be ignored."
 		 + "%n[%4$s] is the increase in the elapsed time as experienced by the observer for each iteration, in seconds,"
 		 + " that is too small to be suitable for iterating."
 		 + " This must be greater than zero."
+		 + " If %6$s less than or equal to zero then this argument will be ignored."
 		 + "%n[%6$s] is the number of runs which, if reached, means that the current time increment is not too big"
 		 + " to be suitable for iterating. If this less than or equal to zero then this argument will be ignored."
 		 + "%n",
