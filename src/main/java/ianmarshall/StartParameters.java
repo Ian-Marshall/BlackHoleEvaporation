@@ -120,8 +120,13 @@ public class StartParameters
 						 S_ARG_NAME_TIME_INCREMENT_TOO_BIG_SECONDS, asArgs[nIndexArgTimeIncrementTooBigSeconds]));
 
 					if (m_bdTimeIncrementTooSmallSeconds.compareTo(BigDecimal.ZERO) < 1)
+					{
+						if (sbError.length() > 0)
+							sbError.append(" ");
+
 						sbError.append(String.format("The parameter %s of value \"%s\" must be greater than zero.",
 						 S_ARG_NAME_TIME_INCREMENT_TOO_SMALL_SECONDS, asArgs[nIndexArgTimeIncrementTooSmallSeconds]));
+					}
 				}
 				catch (NumberFormatException e)
 				{
