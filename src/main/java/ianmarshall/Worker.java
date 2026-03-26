@@ -48,7 +48,9 @@ public class Worker implements Runnable
 	private static final BigDecimal G = new BigDecimal("6.6743e-11");    // The gravitational constant in m^3 kg^-1 s^-2
 	private static final BigDecimal THREE = new BigDecimal(3);
 	private static final int N_PRECISION = 100;
+	private static final int N_LOG_PRECISION = 10;
 	private static final MathContext MC_MATH_CONTEXT = new MathContext(N_PRECISION, RoundingMode.HALF_EVEN);
+	private static final MathContext MC_LOGGING = new MathContext(N_LOG_PRECISION, RoundingMode.HALF_EVEN);
 	private static final BigDecimal K = h.multiply(c2).multiply(c2).divide(
 	 new BigDecimal(10240).multiply(new BigDecimal(Math.PI)).multiply(new BigDecimal(Math.PI)).multiply(G).multiply(G),
 	 MC_MATH_CONTEXT)
@@ -65,13 +67,6 @@ public class Worker implements Runnable
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
 	private static final int N_LOG_SKIP_RATIO = 1_000_000;
 	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
-	/*
-	private static final BigDecimal BD_TEN_TO_THE_2 = BigDecimal.TEN.pow(2);
-	private static final BigDecimal BD_TEN_TO_THE_3 = BigDecimal.TEN.pow(3);
-	private static final BigDecimal BD_TEN_TO_THE_4 = BigDecimal.TEN.pow(4);
-	private static final BigDecimal BD_TEN_TO_THE_5 = BigDecimal.TEN.pow(5);
-	private static final BigDecimal BD_TEN_TO_THE_6 = BigDecimal.TEN.pow(6);
-	*/
 
 	private static int m_nProcessors = 0;
 
@@ -286,11 +281,16 @@ public class Worker implements Runnable
 			 m_bdTimeIncrementTooSmallSeconds.stripTrailingZeros().toString(),
 			 BlackHoleEvaporation.formatInteger(m_nMinRunsForTimeIncrementNotTooBig)));
 
-			s_logger.info("Run number, time slow-down factor, mass in kg");
-			writeToFile("Run number, time in years, time slow-down factor, mass in kg");
+	 // s_logger.info("Run number, time slow-down factor, mass in kg");
+			writeToFile(
+			 "Run number,Time in years,Time slow-down factor,Log time in years,Log time slow-down factor,Mass in kg");
 		}
 
 		m_nRunForTimeIncrement = 0;
+
+		BigDecimal bdLastTimeSlowDownFactor = null;
+		BigDecimal bdLastPreviousMass = null;
+		BigDecimal bd_LastDeltaM = null;
 
 		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1)
 		 && ((m_nMinRunsForTimeIncrementNotTooBig <= 0)
@@ -309,68 +309,22 @@ public class Worker implements Runnable
 			BigDecimal bd_dMdt = K.negate().divide(THREE.multiply(bdTimeSlowDownFactor).multiply(m_bdMass).multiply(m_bdMass),
 			 MC_MATH_CONTEXT);
 			BigDecimal bdPreviousMass = m_bdMass;
-			BigDecimal bd_deltaM = bd_dMdt.multiply(m_bdTimeIncrement);
-			m_bdMass = m_bdMass.add(bd_deltaM).stripTrailingZeros();
+			BigDecimal bd_DeltaM = bd_dMdt.multiply(m_bdTimeIncrement);
+			m_bdMass = m_bdMass.add(bd_DeltaM).stripTrailingZeros();
 			m_bdTime = m_bdTime.add(m_bdTimeIncrement).stripTrailingZeros();
 			m_rdResultData.setMass(m_bdMass);
 			m_rdResultData.setTime(m_bdTime);
 
-			if (reportRun(m_nRun))
-			{
-				final Integer I_LOG_PRECISION = Integer.valueOf(10);
-				String sNRun = BlackHoleEvaporation.formatInteger(m_nRun);
+			bdLastTimeSlowDownFactor = bdTimeSlowDownFactor;
+			bdLastPreviousMass = bdPreviousMass;
+			bd_LastDeltaM = bd_DeltaM;
 
-				s_logger.info(String.format("Worker.execute():"
-					+ "%n  m_nRun               = %s,"
-					+ "%n  m_bdTimeIncrement    = %s,"
-					+ "%n  bdPreviousMass       = %s,"
-					+ "%n  bd_deltaM            = %s,"
-					+ "%n  m_bdMass             = %s,"
-					+ "%n  bdTimeSlowDownFactor = %s.",
-					sNRun,
-					toScientificFormat(m_bdTimeIncrement,    I_LOG_PRECISION),
-					toScientificFormat(bdPreviousMass,       I_LOG_PRECISION),
-					toScientificFormat(bd_deltaM,            I_LOG_PRECISION),
-					toScientificFormat(m_bdMass,             I_LOG_PRECISION),
-					toScientificFormat(bdTimeSlowDownFactor, I_LOG_PRECISION)));
-
-				/*
-				if (m_nRun < N_LOG_SKIP_RATIO)
-					s_logger.info(String.format("Worker.execute():"
-					 + "%n  m_nRun            = %d,"
-					 + "%n  m_bdTimeIncrement = %s,"
-					 + "%n  bdPreviousMass    = %s,"
-					 + "%n  bd_deltaM         = %s,"
-					 + "%n  m_bdMass          = %s.",
-					 m_nRun,
-					 toScientificFormat(m_bdTimeIncrement),
-					 toScientificFormat(bdPreviousMass),
-					 toScientificFormat(bd_deltaM),
-					 toScientificFormat(m_bdMass)));
-				*/
-
-				final int N_MINIMUM_PRECISION = 5;
-				final int N_MINIMUM_LENGTH_TIME_IN_YEARS = 11;
-
-				int nSpacesToPrefix = N_MINIMUM_LENGTH_TIME_IN_YEARS - sNRun.length();
-				if (nSpacesToPrefix > 0)
-					sNRun = " ".repeat(nSpacesToPrefix) + sNRun;
-
-				BigDecimal bdTimeInYears = m_bdTime.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros();
-				int nZeroesToAdd = N_MINIMUM_PRECISION - bdTimeInYears.precision();
-				if (nZeroesToAdd > 0)
-					bdTimeInYears = bdTimeInYears.setScale(bdTimeInYears.scale() + nZeroesToAdd);
-
-				String sTimeSlowDownFactor = toScientificFormat(bdTimeSlowDownFactor);
-				String sMassInKg = toScientificFormat(m_bdMass);
-				s_logger.info(String.format("%s, %s, %s", sNRun, sTimeSlowDownFactor, sMassInKg));
-
-				String sTimeInYears = bdTimeInYears.toString();
-				sTimeSlowDownFactor = bdTimeSlowDownFactor.toString();
-				sMassInKg = m_bdMass.toString();
-				writeToFile(String.format("%d,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sMassInKg));
-			}
+			if (shouldReportRun(m_nRun))
+				reportRun(bdLastTimeSlowDownFactor, bdLastPreviousMass, bd_LastDeltaM);
 		}
+
+		if (!shouldReportRun(m_nRun))
+			reportRun(bdLastTimeSlowDownFactor, bdLastPreviousMass, bd_LastDeltaM);
 	}
 
 	private void writeToFile(String sLine)
@@ -432,31 +386,8 @@ public class Worker implements Runnable
 		return sbResult.toString();
 	}
 
-	/*
 	private BigDecimal calculateTimeIncrement(int nRun)
 	{
-		BigDecimal bdResult = BD_BASE_TIME_INCREMENT;
-
-		if      (nRun <        10)
-			bdResult = bdResult.divide(BD_TEN_TO_THE_6);
-		else if (nRun <       100)
-			bdResult = bdResult.divide(BD_TEN_TO_THE_5);
-		else if (nRun <     1_000)
-			bdResult = bdResult.divide(BD_TEN_TO_THE_4);
-		else if (nRun <    10_000)
-			bdResult = bdResult.divide(BD_TEN_TO_THE_3);
-		else if (nRun <   100_000)
-			bdResult = bdResult.divide(BD_TEN_TO_THE_2);
-		else if (nRun < 1_000_000)
-			bdResult = bdResult.divide(BigDecimal.TEN);
-
-		return bdResult;
-	}
-	*/
-
-	private BigDecimal calculateTimeIncrement(int nRun)
-	{
- // private static final BigDecimal BD_BASE_TIME_INCREMENT = new BigDecimal("3e52");
  // 3e-8 yr ~= 1 second
 		int nExponent = Math.min(nRun - 46, 136);
 
@@ -473,8 +404,44 @@ public class Worker implements Runnable
 		return bdResult;
 	}
 
-	private boolean reportRun(int nRun)
+	private boolean shouldReportRun(int nRun)
 	{
 		return (nRun % N_LOG_SKIP_RATIO == 0) || (nRun <= 184) || (nRun == 100_000);
+	}
+
+	private void reportRun(BigDecimal bdTimeSlowDownFactor, BigDecimal bdPreviousMass, BigDecimal bd_deltaM)
+	{
+		final Integer I_LOG_PRECISION = Integer.valueOf(N_LOG_PRECISION);
+		String sNRun = BlackHoleEvaporation.formatInteger(m_nRun);
+		BigDecimal bdTimeInYears = m_bdTime.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros();
+		String sTimeSlowDownFactor = toScientificFormat(bdTimeSlowDownFactor, I_LOG_PRECISION);
+		String sLogTimeSlowDownFactor = BigDecimal.valueOf(Math.log10(bdTimeSlowDownFactor.doubleValue()))
+		 .round(MC_LOGGING).stripTrailingZeros().toString();
+		String sMassInKg = toScientificFormat(m_bdMass);
+ // s_logger.info(String.format("Worker.reportRun(...): %s, %s, %s", sNRun, sTimeSlowDownFactor, sMassInKg));
+		String sTimeInYears = toScientificFormat(bdTimeInYears, I_LOG_PRECISION);
+		String sLogTimeInYears = BigDecimal.valueOf(Math.log10(bdTimeInYears.doubleValue())).round(MC_LOGGING)
+		 .stripTrailingZeros().toString();
+
+		s_logger.info(String.format("Worker.reportRun(...):"
+		 + "%n  m_nRun                 = %s,"
+		 + "%n  m_bdTimeIncrement      = %s,"
+		 + "%n  bdPreviousMass         = %s,"
+		 + "%n  bd_deltaM              = %s,"
+		 + "%n  m_bdMass               = %s,"
+		 + "%n  bdTimeSlowDownFactor   = %s,"
+		 + "%n  sLogTimeInYears        = %s,"
+		 + "%n  sLogTimeSlowDownFactor = %s.",
+		 sNRun,
+		 toScientificFormat(m_bdTimeIncrement,    I_LOG_PRECISION),
+		 toScientificFormat(bdPreviousMass,       I_LOG_PRECISION),
+		 toScientificFormat(bd_deltaM,            I_LOG_PRECISION),
+		 toScientificFormat(m_bdMass,             I_LOG_PRECISION),
+		 toScientificFormat(bdTimeSlowDownFactor, I_LOG_PRECISION),
+		 sLogTimeInYears,
+		 sLogTimeSlowDownFactor));
+
+		writeToFile(String.format("%d,%s,%s,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sLogTimeInYears,
+		 sLogTimeSlowDownFactor, sMassInKg));
 	}
 }
