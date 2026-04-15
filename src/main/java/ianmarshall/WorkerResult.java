@@ -7,16 +7,16 @@ public class WorkerResult
 	public static class ResultData
 	{
 		private BigDecimal m_bdRadius = null;
-		private BigDecimal m_bdTime = null;
+		private BigDecimal m_bdTimeSeconds = null;
 		private BigDecimal m_bdMass = null;
 		private BigDecimal m_bdTimeIncrementTooBigSeconds = null;
 		private BigDecimal m_bdTimeIncrementTooSmallSeconds = null;
 
-		public ResultData(BigDecimal bdRadius, BigDecimal bdTime, BigDecimal bdMass,
+		public ResultData(BigDecimal bdRadius, BigDecimal bdTimeSeconds, BigDecimal bdMass,
 		 BigDecimal bdTimeIncrementTooBigSeconds, BigDecimal bdTimeIncrementTooSmallSeconds)
 		{
 			m_bdRadius = bdRadius;
-			m_bdTime = bdTime;
+			m_bdTimeSeconds = bdTimeSeconds;
 			m_bdMass = bdMass;
 			m_bdTimeIncrementTooBigSeconds = bdTimeIncrementTooBigSeconds;
 			m_bdTimeIncrementTooSmallSeconds = bdTimeIncrementTooSmallSeconds;
@@ -27,14 +27,14 @@ public class WorkerResult
 			return m_bdRadius;
 		}
 
-		public BigDecimal getTime()
+		public BigDecimal getTimeSeconds()
 		{
-			return m_bdTime;
+			return m_bdTimeSeconds;
 		}
 
-		public void setTime(BigDecimal bdTime)
+		public void setTimeSeconds(BigDecimal bdTimeSeconds)
 		{
-			m_bdTime = bdTime;
+			m_bdTimeSeconds = bdTimeSeconds;
 		}
 
 		public BigDecimal getMass()

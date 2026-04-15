@@ -47,7 +47,7 @@ public class Worker implements Runnable
 	private static final BigDecimal c2 = c.multiply(c).stripTrailingZeros();
 	private static final BigDecimal G = new BigDecimal("6.6743e-11");    // The gravitational constant in m^3 kg^-1 s^-2
 	private static final BigDecimal THREE = new BigDecimal(3);
-	private static final int N_PRECISION = 100;
+	private static final int N_PRECISION = 300;
 	private static final int N_LOG_PRECISION = 10;
 	private static final MathContext MC_MATH_CONTEXT = new MathContext(N_PRECISION, RoundingMode.HALF_EVEN);
 	private static final MathContext MC_LOGGING = new MathContext(N_LOG_PRECISION, RoundingMode.HALF_EVEN);
@@ -56,17 +56,13 @@ public class Worker implements Runnable
 	 MC_MATH_CONTEXT)
 	 .stripTrailingZeros();
 
-	// The mass of the Universe at the Big Bang in kg (taken to be the same as its current mass)
-	private static final BigDecimal BD_UNIVERSAL_MASS = new BigDecimal("1.5e53");
-//private static final BigDecimal BD_UNIVERSAL_MASS = new BigDecimal("1.5e13");    // Test, reduced mass
-
-	private static final BigDecimal BD_START_RADIUS_RATIO_FRACTION = new BigDecimal("1e-90");
-//private static final BigDecimal BD_BASE_TIME_INCREMENT = new BigDecimal("3e52");
-	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(BD_START_RADIUS_RATIO_FRACTION);
+	private static final BigDecimal BD_START_RADIUS_RATIO = BigDecimal.ONE.add(
+	 RunParameters.BD_START_RADIUS_RATIO_FRACTION);
 	private static final BigDecimal BD_ONE_YEAR_IN_SECONDS = new BigDecimal("3.1536e7");
 	private static final Logger s_logger = LoggerFactory.getLogger(Worker.class);
-	private static final int N_LOG_SKIP_RATIO = 1_000_000;
-	private static final File S_FILE_OUTPUT = new File("logs\\Output.csv");
+//private static final int N_LOG_SKIP_RATIO = 1_000_000;
+	private static final int N_LOG_SKIP_RATIO = 10_000;
+	private static final File FILE_OUTPUT = new File("logs\\data.csv");
 
 	private static int m_nProcessors = 0;
 
@@ -83,8 +79,8 @@ public class Worker implements Runnable
 	private BigDecimal m_bdTimeIncrementTooSmallSeconds = BigDecimal.ONE;
 	private int m_nMinRunsForTimeIncrementNotTooBig = 0;
 	private int m_nRunForTimeIncrement = 0;
-	private BigDecimal m_bdTimeIncrement = null;
-	private BigDecimal m_bdTime = null;
+	private BigDecimal m_bdTimeIncrementSeconds = null;
+	private BigDecimal m_bdTimeSeconds = null;
 	private BigDecimal m_bdMass = null;
 	private BigDecimal m_bdRadius = null;
 
@@ -109,7 +105,7 @@ public class Worker implements Runnable
 
 		try
 		{
-			FileWriter fwFileWriter = new FileWriter(S_FILE_OUTPUT, m_nRun > 0);
+			FileWriter fwFileWriter = new FileWriter(FILE_OUTPUT, m_nRun > 0);
 			m_bwBufferedWriter = new BufferedWriter(fwFileWriter);
 		}
 		catch (IOException e)
@@ -180,25 +176,25 @@ public class Worker implements Runnable
 
 				if (m_nRunForTimeIncrement < m_nMinRunsForTimeIncrementNotTooBig)
 				{
-					m_bdTimeIncrementTooBigSeconds = m_bdTimeIncrement;
+					m_bdTimeIncrementTooBigSeconds = m_bdTimeIncrementSeconds;
 					m_spStartParameters.setTimeIncrementTooBigSeconds(m_bdTimeIncrementTooBigSeconds);
 					m_rdResultData.setTimeIncrementTooBigSeconds(m_bdTimeIncrementTooBigSeconds);
 					bTimeIncrementTooBig = true;
 				}
 				else
 				{
-					m_bdTimeIncrementTooSmallSeconds = m_bdTimeIncrement;
+					m_bdTimeIncrementTooSmallSeconds = m_bdTimeIncrementSeconds;
 					m_spStartParameters.setTimeIncrementTooSmallSeconds(m_bdTimeIncrementTooSmallSeconds);
 					m_rdResultData.setTimeIncrementTooSmallSeconds(m_bdTimeIncrementTooSmallSeconds);
 				}
 
-				m_bdTime = BigDecimal.ZERO;
-				m_bdMass = BD_UNIVERSAL_MASS;
-				m_rdResultData.setTime(m_bdTime);
+				m_bdTimeSeconds = BigDecimal.ZERO;
+				m_bdMass = RunParameters.BD_START_UNIVERSAL_MASS_IN_KG;
+				m_rdResultData.setTimeSeconds(m_bdTimeSeconds);
 				m_rdResultData.setMass(m_bdMass);
 
-				s_logger.info(String.format("The tried time increment = %ss (%s), m_nRun = %d.", m_bdTimeIncrement.toString(),
-				 bTimeIncrementTooBig ? "too big" : "too small", m_nRun));
+				s_logger.info(String.format("The tried time increment = %ss (%s), m_nRun = %d.",
+				 m_bdTimeIncrementSeconds.toString(), bTimeIncrementTooBig ? "too big" : "too small", m_nRun));
 			}
 		}
 		while ((!m_bStopping) && (m_bdMass.compareTo(BigDecimal.ZERO) == 1) && ((m_nMinRunsForTimeIncrementNotTooBig <= 0)
@@ -239,7 +235,7 @@ public class Worker implements Runnable
 
 		if (m_rdResultData != null)
 		{
-			m_bdTime = m_rdResultData.getTime();
+			m_bdTimeSeconds = m_rdResultData.getTimeSeconds();
 			m_bdMass = m_rdResultData.getMass();
 			m_bdRadius = m_rdResultData.getRadius();
 			m_bdTimeIncrementTooBigSeconds = m_rdResultData.getTimeIncrementTooBigSeconds();
@@ -247,43 +243,67 @@ public class Worker implements Runnable
 		}
 		else
 		{
-			m_bdTime = BigDecimal.ZERO;
-			m_bdMass = BD_UNIVERSAL_MASS;
+			m_bdTimeSeconds = BigDecimal.ZERO;
+			m_bdMass = RunParameters.BD_START_UNIVERSAL_MASS_IN_KG;
 			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(m_bdMass).divide(c2, MC_MATH_CONTEXT);
 			m_bdRadius = dbStartSchwarzschildRadius.multiply(BD_START_RADIUS_RATIO).stripTrailingZeros();
 			m_bdTimeIncrementTooBigSeconds = m_spStartParameters.getTimeIncrementTooBigSeconds();
 			m_bdTimeIncrementTooSmallSeconds = m_spStartParameters.getTimeIncrementTooSmallSeconds();
-			m_rdResultData = new ResultData(m_bdRadius, m_bdTime, m_bdMass, m_bdTimeIncrementTooBigSeconds,
+			m_rdResultData = new ResultData(m_bdRadius, m_bdTimeSeconds, m_bdMass, m_bdTimeIncrementTooBigSeconds,
 			 m_bdTimeIncrementTooSmallSeconds);
 		}
 
 		if (m_nMinRunsForTimeIncrementNotTooBig > 0)
-			m_bdTimeIncrement = m_bdTimeIncrementTooBigSeconds.add(m_bdTimeIncrementTooSmallSeconds)
+			m_bdTimeIncrementSeconds = m_bdTimeIncrementTooBigSeconds.add(m_bdTimeIncrementTooSmallSeconds)
 			 .divide(BigDecimal.TWO, MC_MATH_CONTEXT).stripTrailingZeros();
 		else
-			m_bdTimeIncrement = calculateTimeIncrement(m_nRun);
+			m_bdTimeIncrementSeconds = RunParameters.calculateTimeIncrementSeconds(m_nRun);
 
 		s_logger.info(String.format("m_bdTimeIncrementTooBigSeconds = %ss, m_bdTimeIncrementTooSmallSeconds = %ss,"
-		 + " m_bdTimeIncrement = %ss.",
+		 + " m_bdTimeIncrementSeconds = %ss.",
 		 m_bdTimeIncrementTooBigSeconds.toString(),
 		 m_bdTimeIncrementTooSmallSeconds.toString(),
-		 m_bdTimeIncrement.stripTrailingZeros().toString()));
+		 m_bdTimeIncrementSeconds.stripTrailingZeros().toString()));
 
 		if (m_nRun == 0)
 		{
-			s_logger.info(String.format("Universal mass: %skg, start radius ratio: %s + %s,"
-			 + " \"too big\" time increment: %ss, \"too small\" time increment: %ss,"
-			 + " minimum number of runs for not-\"too-big\"-a-time increment: %s.",
+			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(m_bdMass).divide(c2, MC_MATH_CONTEXT);
+
+			s_logger.info(String.format("Start values:"
+			 + "%n  Universal mass:                                          %skg,"
+			 + "%n  start radius ratio:                                      %s + %s,"
+			 + "%n  start Schwarzschild radius:                              %s,"
+			 + "%n  \"too big\" time increment:                                %ss,"
+			 + "%n  \"too small\" time increment:                              %ss,"
+			 + "%n  minimum number of runs for time increment not \"too-big\": %s,"
+			 + "%n  RunParameters.CSV_FIELD_MODE:                            %s.",
 			 m_bdMass.stripTrailingZeros().toString(),
-			 BigDecimal.ONE.toString(),
-			 BD_START_RADIUS_RATIO_FRACTION.toString(),
+			 BigDecimal.ONE.toString(), RunParameters.BD_START_RADIUS_RATIO_FRACTION.toString(),
+			 toScientificFormat(dbStartSchwarzschildRadius, Integer.valueOf(N_LOG_PRECISION)),
 			 m_bdTimeIncrementTooBigSeconds.stripTrailingZeros().toString(),
 			 m_bdTimeIncrementTooSmallSeconds.stripTrailingZeros().toString(),
-			 BlackHoleEvaporation.formatInteger(m_nMinRunsForTimeIncrementNotTooBig)));
+			 BlackHoleEvaporation.formatInteger(m_nMinRunsForTimeIncrementNotTooBig),
+			RunParameters.CSV_FIELD_MODE.toString()));
 
-	 // s_logger.info("Run number, time slow-down factor, mass in kg");
-			writeToFile(
-			 "Run number,Time in years,Time slow-down factor,Log time in years,Log time slow-down factor,Mass in kg");
+			String sCSVHeader;
+			switch (RunParameters.CSV_FIELD_MODE)
+			{
+				case ALL_FIELDS:
+					sCSVHeader =
+					 "Run number,Time in years,Time slow-down factor,Log time in years,Log time slow-down factor,Mass in kg";
+					break;
+				case LINEAR_FIELDS_ONLY:
+					sCSVHeader = "Time in years,Time slow-down factor";
+					break;
+				case LOGARITHMIC_FIELDS_ONLY:
+					sCSVHeader = "Log time in years,Log time slow-down factor";
+					break;
+				default:
+					throw new RuntimeException(String.format("Invalid CSVFieldMode: %s.",
+					 RunParameters.CSV_FIELD_MODE != null ? RunParameters.CSV_FIELD_MODE.toString() : "[null]"));
+			}
+
+			writeToFile(sCSVHeader.toString());
 		}
 
 		m_nRunForTimeIncrement = 0;
@@ -301,19 +321,19 @@ public class Worker implements Runnable
 			m_nRunForTimeIncrement++;
 
 			if (m_nMinRunsForTimeIncrementNotTooBig <= 0)
-				m_bdTimeIncrement = calculateTimeIncrement(m_nRun);
+				m_bdTimeIncrementSeconds = RunParameters.calculateTimeIncrementSeconds(m_nRun);
 
-			BigDecimal dbStartSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(m_bdMass).divide(c2, MC_MATH_CONTEXT);
+			BigDecimal dbSchwarzschildRadius = BigDecimal.TWO.multiply(G).multiply(m_bdMass).divide(c2, MC_MATH_CONTEXT);
 			BigDecimal bdTimeSlowDownFactor =
-			 BigDecimal.ONE.subtract(dbStartSchwarzschildRadius.divide(m_bdRadius, MC_MATH_CONTEXT));
+			 BigDecimal.ONE.subtract(dbSchwarzschildRadius.divide(m_bdRadius, MC_MATH_CONTEXT));
 			BigDecimal bd_dMdt = K.negate().divide(THREE.multiply(bdTimeSlowDownFactor).multiply(m_bdMass).multiply(m_bdMass),
 			 MC_MATH_CONTEXT);
 			BigDecimal bdPreviousMass = m_bdMass;
-			BigDecimal bd_DeltaM = bd_dMdt.multiply(m_bdTimeIncrement);
+			BigDecimal bd_DeltaM = bd_dMdt.multiply(m_bdTimeIncrementSeconds);
 			m_bdMass = m_bdMass.add(bd_DeltaM).stripTrailingZeros();
-			m_bdTime = m_bdTime.add(m_bdTimeIncrement).stripTrailingZeros();
+			m_bdTimeSeconds = m_bdTimeSeconds.add(m_bdTimeIncrementSeconds).stripTrailingZeros();
 			m_rdResultData.setMass(m_bdMass);
-			m_rdResultData.setTime(m_bdTime);
+			m_rdResultData.setTimeSeconds(m_bdTimeSeconds);
 
 			bdLastTimeSlowDownFactor = bdTimeSlowDownFactor;
 			bdLastPreviousMass = bdPreviousMass;
@@ -386,62 +406,64 @@ public class Worker implements Runnable
 		return sbResult.toString();
 	}
 
-	private BigDecimal calculateTimeIncrement(int nRun)
-	{
- // 3e-8 yr ~= 1 second
-		int nExponent = Math.min(nRun - 46, 136);
-
-		String sFormat;
-		if (nRun <= 181)
-			sFormat = "3e%d";
-		else if (nRun == 182)
-			sFormat = "1e%d";
-		else
-			sFormat = "1.5e%d";
-
-		String sTimeIncrement = String.format(sFormat, nExponent);
-		BigDecimal bdResult = new BigDecimal(sTimeIncrement);
-		return bdResult;
-	}
-
 	private boolean shouldReportRun(int nRun)
 	{
-		return (nRun % N_LOG_SKIP_RATIO == 0) || (nRun <= 184) || (nRun == 100_000);
+ // return (nRun % N_LOG_SKIP_RATIO == 0) || (nRun <= 184) || (nRun == 100_000);
+		return (nRun % N_LOG_SKIP_RATIO == 0) || (nRun <= 184) || (nRun == 1_000);
 	}
 
 	private void reportRun(BigDecimal bdTimeSlowDownFactor, BigDecimal bdPreviousMass, BigDecimal bd_deltaM)
 	{
 		final Integer I_LOG_PRECISION = Integer.valueOf(N_LOG_PRECISION);
 		String sNRun = BlackHoleEvaporation.formatInteger(m_nRun);
-		BigDecimal bdTimeInYears = m_bdTime.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros();
+		BigDecimal bdTimeYears = m_bdTimeSeconds.divide(BD_ONE_YEAR_IN_SECONDS, MC_MATH_CONTEXT).stripTrailingZeros();
 		String sTimeSlowDownFactor = toScientificFormat(bdTimeSlowDownFactor, I_LOG_PRECISION);
 		String sLogTimeSlowDownFactor = BigDecimal.valueOf(Math.log10(bdTimeSlowDownFactor.doubleValue()))
 		 .round(MC_LOGGING).stripTrailingZeros().toString();
 		String sMassInKg = toScientificFormat(m_bdMass);
  // s_logger.info(String.format("Worker.reportRun(...): %s, %s, %s", sNRun, sTimeSlowDownFactor, sMassInKg));
-		String sTimeInYears = toScientificFormat(bdTimeInYears, I_LOG_PRECISION);
-		String sLogTimeInYears = BigDecimal.valueOf(Math.log10(bdTimeInYears.doubleValue())).round(MC_LOGGING)
+		String sTimeYears = toScientificFormat(bdTimeYears, I_LOG_PRECISION);
+		String sLogTimeYears = BigDecimal.valueOf(Math.log10(bdTimeYears.doubleValue())).round(MC_LOGGING)
 		 .stripTrailingZeros().toString();
 
 		s_logger.info(String.format("Worker.reportRun(...):"
-		 + "%n  m_nRun                 = %s,"
-		 + "%n  m_bdTimeIncrement      = %s,"
-		 + "%n  bdPreviousMass         = %s,"
-		 + "%n  bd_deltaM              = %s,"
-		 + "%n  m_bdMass               = %s,"
-		 + "%n  bdTimeSlowDownFactor   = %s,"
-		 + "%n  sLogTimeInYears        = %s,"
-		 + "%n  sLogTimeSlowDownFactor = %s.",
+		 + "%n  m_nRun                   = %s,"
+		 + "%n  m_bdTimeIncrementSeconds = %s,"
+		 + "%n  bdPreviousMass           = %s,"
+		 + "%n  bd_deltaM                = %s,"
+		 + "%n  m_bdMass                 = %s,"
+		 + "%n  sTimeYears               = %s,"
+		 + "%n  bdTimeSlowDownFactor     = %s,"
+		 + "%n  sLogTimeYears            = %s,"
+		 + "%n  sLogTimeSlowDownFactor   = %s.",
 		 sNRun,
-		 toScientificFormat(m_bdTimeIncrement,    I_LOG_PRECISION),
-		 toScientificFormat(bdPreviousMass,       I_LOG_PRECISION),
-		 toScientificFormat(bd_deltaM,            I_LOG_PRECISION),
-		 toScientificFormat(m_bdMass,             I_LOG_PRECISION),
-		 toScientificFormat(bdTimeSlowDownFactor, I_LOG_PRECISION),
-		 sLogTimeInYears,
+		 toScientificFormat(m_bdTimeIncrementSeconds, I_LOG_PRECISION),
+		 toScientificFormat(bdPreviousMass,           I_LOG_PRECISION),
+		 toScientificFormat(bd_deltaM,                I_LOG_PRECISION),
+		 toScientificFormat(m_bdMass,                 I_LOG_PRECISION),
+		 sTimeYears,
+		 toScientificFormat(bdTimeSlowDownFactor,     I_LOG_PRECISION),
+		 sLogTimeYears,
 		 sLogTimeSlowDownFactor));
 
-		writeToFile(String.format("%d,%s,%s,%s,%s,%s", m_nRun, sTimeInYears, sTimeSlowDownFactor, sLogTimeInYears,
-		 sLogTimeSlowDownFactor, sMassInKg));
+		String sCSVLine;
+		switch (RunParameters.CSV_FIELD_MODE)
+		{
+			case ALL_FIELDS:
+				sCSVLine = String.format("%d,%s,%s,%s,%s,%s", m_nRun, sTimeYears, sTimeSlowDownFactor, sLogTimeYears,
+				 sLogTimeSlowDownFactor, sMassInKg);
+				break;
+			case LINEAR_FIELDS_ONLY:
+				sCSVLine = String.format("%s,%s", sTimeYears, sTimeSlowDownFactor);
+				break;
+			case LOGARITHMIC_FIELDS_ONLY:
+				sCSVLine = String.format("%s,%s", sLogTimeYears, sLogTimeSlowDownFactor);
+				break;
+			default:
+				throw new RuntimeException(String.format("Invalid CSVFieldMode: %s.",
+				 RunParameters.CSV_FIELD_MODE != null ? RunParameters.CSV_FIELD_MODE.toString() : "[null]"));
+		}
+
+		writeToFile(sCSVLine);
 	}
 }
