@@ -27,8 +27,9 @@ public class RunParameters
 //private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = BigDecimal.ONE;
 //private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-10");
 //private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-41");
-//private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-101");
-	private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-151");
+//private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-151");
+//private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-51");
+	private static final BigDecimal BD_TIME_INCREMENT_SECONDS_RUN_0 = new BigDecimal("1e-26");
 	private static final BigDecimal BD_TIME_INCREMENT_SECONDS_INCREASE_FACTOR = BigDecimal.TEN;
 //private static final BigDecimal BD_TIME_INCREMENT_SECONDS_FINAL = new BigDecimal("1.5e+136");
 //private static final BigDecimal BD_TIME_INCREMENT_SECONDS_FINAL = new BigDecimal("1.5e+140");
